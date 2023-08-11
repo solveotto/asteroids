@@ -42,6 +42,8 @@ class Player():
             if speed < player_max_speed:
                 self.hspeed += fd_fric * math.cos(self.dir * math.pi / 180)
                 self.vspeed += fd_fric * math.sin(self.dir * math.pi / 180)
+                
+               
             else:
                 player_max_speed * math.cos(self.dir * math.pi / 180)
         else:
@@ -61,7 +63,7 @@ class Player():
             else:
                 self.hspeed = 0
                 self.vspeed = 0
-        
+
         
         # Forhindrer warp:
         if self.y < 0:
@@ -84,6 +86,13 @@ class Player():
         x = self.x
         y = self.y
         s = self.size
+
+
+        print((x - (s * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) + a),
+                          y - (s * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) + a)),
+                         (x + s * math.cos(a), y + s * math.sin(a)))
+
+        pygame.draw.line(screen, white, (300, -200), (300, -200))
 
         # Tegner romskipet:
         # Venstre del

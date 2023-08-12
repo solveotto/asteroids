@@ -11,7 +11,7 @@ pygame.init()
 # Movement settings
 fd_fric = 0.5
 bd_fric = 0.1
-player_max_speed = 20
+player_max_speed = 10
 player_max_rtspeed = 10
 
 # Screen settings
@@ -88,12 +88,6 @@ class Player():
         s = self.size
 
 
-        print((x - (s * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) + a),
-                          y - (s * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) + a)),
-                         (x + s * math.cos(a), y + s * math.sin(a)))
-
-        pygame.draw.line(screen, white, (300, -200), (300, -200))
-
         # Tegner romskipet:
         # Venstre del
         pygame.draw.line(screen, white,
@@ -111,10 +105,35 @@ class Player():
                           y - (s * math.sqrt(2) / 2) * math.sin(a + math.pi / 4)),
                          (x - (s * math.sqrt(2) / 2) * math.cos(-a + math.pi / 4),
                           y + (s * math.sqrt(2) / 2) * math.sin(-a + math.pi / 4)))
-
-
+        if self.thrust:
+            pygame.draw.line(screen, white,
+                         (x + s * math.cos(a), 
+                          y + s * math.sin(a)),
+                         (x - s * math.sqrt(5) / 12 * math.cos(a + math.pi / 6),
+                         y - s * math.sqrt(5) / 12 * math.sin(a + math.pi / 6)))
+        
+        
 class Bullet():
-    pass
+    def __init__(self, x, y, dir) -> None:
+        self.x = x
+        self.y = y
+        self.dir = dir
+        self.size = 1
+        self.speed = 15
+        self.life = 55
+    
+
+    def update_bullet(self):
+        
+        self.x += self.speed * math.cos(self.dir * math.pi / 180)
+        self.y += self.speed * math.sin(self.dir * math.pi / 180)
+        
+        pygame.draw.circle(screen, white, (int(self.x), int(self.y)), self.size)
+        
+        self.life -= 1
+
+
+
 
 class Asteroid():
     pass
@@ -124,6 +143,7 @@ class Asteroid():
 def gameloop():
     # Initial variables
     player = Player(display_width // 2, display_height // 2)
+    bullets = []
     
 
     # Main game loop
@@ -144,15 +164,25 @@ def gameloop():
                     player.thrust = False
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
                     player.rtspeed = 0
+                if event.key == pygame.K_SPACE:
+                    print("Bullet")
+                    bullets.append(Bullet(player.x, player.y, player.dir))
 
 
-
-        player.updatePlayer()
-
-        # Draw triangle
         screen.fill((0, 0, 0))
-        player.drawPlayer()
         
+        player.updatePlayer()
+        if len(bullets) > 0:
+            for bullet in bullets:
+                bullet.update_bullet()
+                if bullet.life == 0:
+                    bullets.remove(bullet)
+                
+        print(bullets)
+        
+        
+        player.drawPlayer()
+               
         pygame.display.flip()
         clock.tick(30)
         

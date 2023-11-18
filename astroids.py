@@ -3,6 +3,8 @@ import sys
 import math
 import time
 
+import random
+
 pygame.init()
 
 
@@ -159,7 +161,13 @@ class Bullet():
 
 
 class Asteroid():
-    pass
+        full_circle = random.uniform(18, 36)
+        dist = random.uniform(self.size / 2, self.size)
+        self.vertices = []
+        while full_circle < 360:
+            self.vertices.append([dist, full_circle])
+            dist = random.uniform(self.size / 2, self.size)
+            full_circle += random.uniform(18, 36)
 
 
 

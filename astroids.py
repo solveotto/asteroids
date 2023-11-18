@@ -22,6 +22,7 @@ clock = pygame.time.Clock()
 
 # Farger
 white = (255, 255, 255)
+yellow = (231, 245, 39)
 
 
 class Player():
@@ -82,35 +83,57 @@ class Player():
          
 
     def drawPlayer(self):
-        a = math.radians(self.dir)
+        angle = math.radians(self.dir)
+        size = self.size
         x = self.x
         y = self.y
-        s = self.size
+
+        '''
+            Forklaring:
+            math.cos = horisontal
+            math.sin = vertikal
+        '''
+
 
 
         # Tegner romskipet:
         # Venstre del
         pygame.draw.line(screen, white,
-                         (x - (s * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) + a),
-                          y - (s * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) + a)),
-                         (x + s * math.cos(a), y + s * math.sin(a)))
+                         # Startpunkt
+                         (x - (size * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) + angle),
+                          y - (size * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) + angle)),
+                          # Sluttpunkt
+                         (x + size * math.cos(angle), y + size * math.sin(angle)))
         # Høyre del
         pygame.draw.line(screen, white,
-                         (x - (s * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) - a),
-                          y + (s * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) - a)),
-                         (x + s * math.cos(a), y + s * math.sin(a)))
+                         (x - (size * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) - angle),
+                          y + (size * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) - angle)),
+                         (x + size * math.cos(angle), y + size * math.sin(angle)))
         # Nederste del av romskipet
         pygame.draw.line(screen, white,
-                         (x - (s * math.sqrt(2) / 2) * math.cos(a + math.pi / 4),
-                          y - (s * math.sqrt(2) / 2) * math.sin(a + math.pi / 4)),
-                         (x - (s * math.sqrt(2) / 2) * math.cos(-a + math.pi / 4),
-                          y + (s * math.sqrt(2) / 2) * math.sin(-a + math.pi / 4)))
+                         (x - (size * math.sqrt(2) / 2) * math.cos(angle + math.pi / 4),
+                          y - (size * math.sqrt(2) / 2) * math.sin(angle + math.pi / 4)),
+                         (x - (size * math.sqrt(2) / 2) * math.cos(-angle + math.pi / 4),
+                          y + (size * math.sqrt(2) / 2) * math.sin(-angle + math.pi / 4)))
         if self.thrust:
-            pygame.draw.line(screen, white,
-                         (x + s * math.cos(a), 
-                          y + s * math.sin(a)),
-                         (x - s * math.sqrt(5) / 12 * math.cos(a + math.pi / 6),
-                         y - s * math.sqrt(5) / 12 * math.sin(a + math.pi / 6)))
+            print("Thrust")
+
+            # Venstre strek
+            pygame.draw.line(screen, yellow,     
+                             # Startpunkt (X, Y)
+                             (x - size * math.cos(angle), y - size * math.sin(angle)),
+                             # Sluttpunkt (X, Y)
+                             (x - (size * math.sqrt(5) / 4) * math.cos(angle + math.pi / 6),
+                              y - (size * math.sqrt(5) / 4) * math.sin(angle + math.pi / 6)))
+            
+            # Høyre strek
+            pygame.draw.line(screen, yellow,
+                             # Startpunkt (X, Y)
+                             (x - size * math.cos(angle), y + size * math.sin(-angle)),
+                             # Sluttpunkt (X, Y)
+                             (x - (size * math.sqrt(5) / 4) * math.cos(-angle + math.pi / 6),
+                              y + (size * math.sqrt(5) / 4) * math.sin(-angle + math.pi / 6)))
+            
         
         
 class Bullet():
@@ -165,7 +188,6 @@ def gameloop():
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
                     player.rtspeed = 0
                 if event.key == pygame.K_SPACE:
-                    print("Bullet")
                     bullets.append(Bullet(player.x, player.y, player.dir))
 
 
@@ -178,7 +200,7 @@ def gameloop():
                 if bullet.life == 0:
                     bullets.remove(bullet)
                 
-        print(bullets)
+        
         
         
         player.drawPlayer()

@@ -36,9 +36,11 @@ class Player():
         self.hspeed = 0
         self.vspeed = 0
         self.rtspeed = 0
-        self.size = 10
         self.dir = -90
         self.thrust = False
+        
+        self.size = 10
+        self.life = 3
     
     
     def updatePlayer(self):
@@ -134,6 +136,18 @@ class Player():
                              # Sluttpunkt (X, Y)
                              (x - (size * math.sqrt(5) / 4) * math.cos(-angle + math.pi / 6),
                               y + (size * math.sqrt(5) / 4) * math.sin(-angle + math.pi / 6)))
+            
+
+    def resetPlayer(self):
+        self.x = display_width // 2
+        self.y = display_height // 2
+        self.hspeed = 0
+        self.vspeed = 0
+        self.rtspeed = 0
+        self.dir = -90
+        self.thrust = False
+        
+            
             
 class deadPlayer():
     def __init__(self, x, y, l):
@@ -242,9 +256,11 @@ def gameloop():
     astorides = [Asteroid(250,250, "large")]
     player_pieces = []
     player_state = "alive"
-    player_death_delay = 90
+    player_death_timer = 0
     player_blink = 0
-
+    player_invinsible_dur = 0
+    
+    
     # Main game loop
     running = True
     while running:
@@ -263,14 +279,21 @@ def gameloop():
                     player.thrust = False
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
                     player.rtspeed = 0
-                if event.key == pygame.K_SPACE:
+                if event.key == pygame.K_SPACE and player_state == "alive":
                     bullets.append(Bullet(player.x, player.y, player.dir))
 
 
         screen.fill((0, 0, 0))
         
         player.updatePlayer()
-
+        
+        
+        # sjekker om spiller er invinsible
+        if player_invinsible_dur != 0:
+            player_invinsible_dur -= 1
+        else:
+            player_state = "alive"
+        
         
         # Genererer Asteroider vekk fra senter
         
@@ -286,6 +309,10 @@ def gameloop():
 
                     # Spiller dør
                     player_state = "dead"
+                    player_invinsible_dur  = 120
+                    player_death_timer = 30
+                    player.life -= 1
+                    player.resetPlayer()
                     
                 for b in bullets:
                     if kollisjonssjekk(b.x, b.y, a.x, a.y, a.size):
@@ -307,19 +334,20 @@ def gameloop():
 
         # Tegne spiller
         if player_state == "dead":
-            if player_death_delay == 0:
+            if player_death_timer == 0:
                 if player_blink < 5:
                     if player_blink == 0:
                         player_blink = 10
                     else:
                         player.drawPlayer()
                 player_blink -= 1
-                player_death_delay = 90
-                player_state = "alive"
             else:
-                player_death_delay -= 1
+                player_death_timer -= 1
         else:
             player.drawPlayer()
+            
+        
+        
 
         pygame.display.flip()
         clock.tick(30)

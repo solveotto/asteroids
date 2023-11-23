@@ -30,6 +30,10 @@ def kollisjonssjekk(x, y, x2, y2, size):
         return True
     return False
 
+def drawText(msg, x, y, size, color, centered=True):
+    text = pygame.font.SysFont("Calibri", size).render(msg, True, color)
+    screen.blit(text, (x,y))
+
 
 class Player():
     def __init__(self, x, y) -> None:
@@ -40,6 +44,7 @@ class Player():
         self.rtspeed = 0
         self.dir = -90
         self.thrust = False
+        self.score = 0
         
         self.size = 10
         self.life = 3
@@ -338,11 +343,15 @@ def gameloop():
                     if kollisjonssjekk(b.x, b.y, a.x, a.y, a.size):
                         bullets.remove(b)
                         if a.s == "large":
+                            player.score += 100
                             asteroides.append(Asteroid(a.x, a.y, "medium"))
                             asteroides.append(Asteroid(a.x, a.y, "medium"))
                         elif a.s == "medium":
+                            player.score += 150
                             asteroides.append(Asteroid(a.x, a.y, "small"))
                             asteroides.append(Asteroid(a.x, a.y, "small"))
+                        else:
+                            player.score += 200
                         asteroides.remove(a)
                         
 
@@ -375,6 +384,7 @@ def gameloop():
             
         
         # Tegne poengsum
+        drawText(x=20,y=20,size=30, msg="Poeng: "+str(player.score), color=white, centered=False)
         
 
         pygame.display.flip()
@@ -384,6 +394,3 @@ gameloop()
 
 pygame.quit()
 sys.exit()
-
-
-

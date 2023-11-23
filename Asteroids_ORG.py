@@ -38,7 +38,7 @@ snd_saucerS = pygame.mixer.Sound("Sounds/saucerSmall.wav")
 
 # Create function to draw texts
 def drawText(msg, color, x, y, s, center=True):
-    screen_text = pygame.font.SysFont("Calibri", s).render(msg, True, color)
+    screen_text = pygame.font.SysFont(" ", s).render(msg, True, color)
     if center:
         rect = screen_text.get_rect()
         rect.center = (x, y)

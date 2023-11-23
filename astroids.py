@@ -2,6 +2,7 @@ import pygame
 import sys
 import math
 import random
+import time
 
 pygame.init()
 
@@ -10,7 +11,7 @@ pygame.init()
 # Movement settings
 fd_fric = 0.5
 bd_fric = 0.1
-player_max_speed = 10
+player_max_speed = 20.0
 player_max_rtspeed = 10
 
 # Screen settings
@@ -29,6 +30,7 @@ def kollisjonssjekk(x, y, x2, y2, size):
         return True
     return False
 
+
 class Player():
     def __init__(self, x, y) -> None:
         self.x = x
@@ -44,13 +46,17 @@ class Player():
     
     
     def updatePlayer(self):
-        speed = speed = math.sqrt(self.hspeed**2 + self.vspeed**2)
+        
+        # Hastighetsstyring
+        speed = math.sqrt(self.hspeed**2 + self.vspeed**2)
         if self.thrust == True:
             if speed < player_max_speed:
                 self.hspeed += fd_fric * math.cos(self.dir * math.pi / 180)
                 self.vspeed += fd_fric * math.sin(self.dir * math.pi / 180)
             else:
-                player_max_speed * math.cos(self.dir * math.pi / 180)
+                # BUG: Styringen endrer seg når skipet kommer i topphastiget.
+                self.hspeed = player_max_speed * math.cos(self.dir * math.pi / 180)
+                self.vspeed = player_max_speed * math.sin(self.dir * math.pi / 180)
         else:
             if speed - bd_fric > 0:
                 chg_hspeed = (bd_fric * math.cos(self.vspeed / self.hspeed))
@@ -84,7 +90,7 @@ class Player():
         self.x += self.hspeed
         self.y += self.vspeed
         self.dir += self.rtspeed
-         
+
 
     def drawPlayer(self):
         angle = math.radians(self.dir)
@@ -92,34 +98,36 @@ class Player():
         x = self.x
         y = self.y
 
-        '''
-            Forklaring:
-            math.cos = horisontal
-            math.sin = vertikal
-        '''
-
-
-
         # Tegner romskipet:
-        # Venstre del
+        # Venstre strek.
         pygame.draw.line(screen, white,
-                         # Startpunkt
+                         # Øverste punktet på streken.
+                         # Forklaring: x/y-koordinat * størrelse * vinkelen. 
+                         # Lager et nytt punkt basert på størrelse og vinkel
+                         (x + size * math.cos(angle), 
+                          y + size * math.sin(angle)),
+                         # Nederste punktet på streken.
+                         # Forklaring: En konstat vinkel + justert vinkel * konstant størrelse - x/y-koordinat
                          (x - (size * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) + angle),
-                          y - (size * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) + angle)),
-                          # Sluttpunkt
-                         (x + size * math.cos(angle), y + size * math.sin(angle)))
-        # Høyre del
+                          y - (size * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) + angle)))
+        # Høyre strek.
         pygame.draw.line(screen, white,
+                         # Øverste punktet på streken.
+                         (x + size * math.cos(angle), 
+                          y + size * math.sin(angle)),
+                         # Nederste punktet på streken.
                          (x - (size * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) - angle),
-                          y + (size * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) - angle)),
-                         (x + size * math.cos(angle), y + size * math.sin(angle)))
-        # Nederste del av romskipet
+                          y + (size * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) - angle)))
+        # Nederste strek.
         pygame.draw.line(screen, white,
-                         (x - (size * math.sqrt(2) / 2) * math.cos(angle + math.pi / 4),
-                          y - (size * math.sqrt(2) / 2) * math.sin(angle + math.pi / 4)),
-                         (x - (size * math.sqrt(2) / 2) * math.cos(-angle + math.pi / 4),
-                          y + (size * math.sqrt(2) / 2) * math.sin(-angle + math.pi / 4)))
-        # Hvis det blir gitt thrust, så tegnes det en stikkflamme
+                         # Venstre punkt.
+                         (x - (size * math.sqrt(2) / 2) * math.cos(math.pi / 4 + angle),
+                          y - (size * math.sqrt(2) / 2) * math.sin(math.pi / 4 + angle)),
+                         # Høyre punkt.
+                         (x - (size * math.sqrt(2) / 2) * math.cos(math.pi / 4 + -angle),
+                          y + (size * math.sqrt(2) / 2) * math.sin(math.pi / 4 + -angle)))
+        
+        # Hvis det blir gitt thrust, så tegnes det en stikkflamme.
         if self.thrust:
             # Venstre strek
             pygame.draw.line(screen, yellow,     
@@ -172,13 +180,12 @@ class deadPlayer():
             self.angle += self.rtsp
         
 
-
 class Bullet():
     def __init__(self, x, y, dir) -> None:
         self.x = x
         self.y = y
         self.dir = dir
-        self.size = 1
+        self.size = 2
         self.speed = 15
         self.life = 40
     
@@ -204,6 +211,7 @@ class Asteroid():
             self.size = 20
         else:
             self.size = 10
+        self.s = s
         
 
         # Setter random retning og fart
@@ -253,12 +261,13 @@ def gameloop():
     # Initial variables
     player = Player(display_width // 2, display_height // 2)
     bullets = []
-    astorides = [Asteroid(250,250, "large")]
+    asteroides = []
     player_pieces = []
     player_state = "alive"
     player_death_timer = 0
     player_blink = 0
-    player_invinsible_dur = 0
+    player_spawn_dur = 0
+    stage = 1
     
     
     # Main game loop
@@ -288,18 +297,29 @@ def gameloop():
         player.updatePlayer()
         
         
-        # sjekker om spiller er invinsible
-        if player_invinsible_dur != 0:
-            player_invinsible_dur -= 1
+        # sjekker om spiller spawner
+        if player_spawn_dur != 0:
+            player_spawn_dur -= 1
         else:
             player_state = "alive"
         
         
         # Genererer Asteroider vekk fra senter
-        
+        if len(asteroides) == 0 and player_state == "alive":
+            dw = display_width
+            dh = display_height       
+            for x in range(stage+3):
+                xSpwn = dw / 2
+                ySpwn = dh / 2
+                while xSpwn - dw / 2 < dw / 4 and ySpwn - dh < dh /4:
+                    xSpwn = random.randrange(0, dw)
+                    ySpwn = random.randrange(0, dh)
+                asteroides.append(Asteroid(xSpwn, ySpwn, "large"))
+
+                
 
         # Asteroides
-        for a  in astorides:
+        for a in asteroides:
             a.update_asteroide()
             if player_state != "dead":
                 if kollisjonssjekk(player.x, player.y, a.x, a.y, a.size):
@@ -309,15 +329,22 @@ def gameloop():
 
                     # Spiller dør
                     player_state = "dead"
-                    player_invinsible_dur  = 120
+                    player_spawn_dur  = 120
                     player_death_timer = 30
                     player.life -= 1
                     player.resetPlayer()
                     
                 for b in bullets:
                     if kollisjonssjekk(b.x, b.y, a.x, a.y, a.size):
-                        print("ASTROIDE EXPLODERER")
-                        bullets.pop()
+                        bullets.remove(b)
+                        if a.s == "large":
+                            asteroides.append(Asteroid(a.x, a.y, "medium"))
+                            asteroides.append(Asteroid(a.x, a.y, "medium"))
+                        elif a.s == "medium":
+                            asteroides.append(Asteroid(a.x, a.y, "small"))
+                            asteroides.append(Asteroid(a.x, a.y, "small"))
+                        asteroides.remove(a)
+                        
 
         for fragmet in player_pieces:
             fragmet.updateDeadPlayer()
@@ -347,6 +374,7 @@ def gameloop():
             player.drawPlayer()
             
         
+        # Tegne poengsum
         
 
         pygame.display.flip()

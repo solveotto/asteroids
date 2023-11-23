@@ -79,7 +79,6 @@ class Asteroid:
             self.vertices.append([dist, full_circle])
             dist = random.uniform(self.size / 2, self.size)
             full_circle += random.uniform(18, 36)
-        
 
     def updateAsteroid(self):
         # Move asteroid
@@ -98,7 +97,6 @@ class Asteroid:
 
         # Draw asteroid
         for v in range(len(self.vertices)):
-            print(v)
             if v == len(self.vertices) - 1:
                 next_v = self.vertices[0]
             else:

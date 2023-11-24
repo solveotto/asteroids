@@ -3,26 +3,36 @@ import sys
 import math
 import random
 import time
+import json
 
 pygame.init()
+clock = pygame.time.Clock()
 
-
-### Initital Constants ###
-# Movement settings
+### Konstanter ###
+# Fysikk
 fd_fric = 0.5
 bd_fric = 0.1
 player_max_speed = 20.0
 player_max_rtspeed = 10
 
-# Screen settings
+
+# Skjerm
 display_width  = 800
 display_height = 600
 screen = pygame.display.set_mode((display_width, display_height))
-clock = pygame.time.Clock()
+
+
+# Lagring
+saveFilePath = "highscore.json"
+font_path = 'fonts/Hyperspace-JvEM.ttf'  # Replace with the path to your font file
+font_size = 36  # You can set this to any size you want
+custom_font = pygame.font.Font(font_path, font_size)
+
 
 # Farger
 white = (255, 255, 255)
 yellow = (231, 245, 39)
+black = (0, 0, 0)
 
 
 def kollisjonssjekk(x, y, x2, y2, size):
@@ -30,24 +40,38 @@ def kollisjonssjekk(x, y, x2, y2, size):
         return True
     return False
 
-def drawText(msg, x, y, size, color, centered=True):
-    text = pygame.font.SysFont("Calibri", size).render(msg, True, color)
-    screen.blit(text, (x,y))
+def drawText(msg, x, y, size, color, orient="centered"):
+    text = pygame.font.Font(font_path, size).render(msg, True, color)
+    if orient == "centered":
+        # lager et rektangel med koordinatene til texten
+        
+        rect = text.get_rect()
+        rect.center = (x, y)
+    elif orient == "right":
+        rect = text.get_rect()
+        rect.right = x
+        rect.y = y
+    elif orient == "left":
+        rect = text.get_rect()
+        rect.left = x
+        rect.y = y
+    else:
+        rect = (x,y)
+    screen.blit(text, rect)
 
 
 class Player():
-    def __init__(self, x, y) -> None:
+    def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.size = 10
         self.hspeed = 0
         self.vspeed = 0
         self.rtspeed = 0
         self.dir = -90
         self.thrust = False
-        self.score = 0
         
-        self.size = 10
-        self.life = 3
+
     
     
     def updatePlayer(self):
@@ -149,7 +173,7 @@ class Player():
                              # Sluttpunkt (X, Y)
                              (x - (size * math.sqrt(5) / 4) * math.cos(-angle + math.pi / 6),
                               y + (size * math.sqrt(5) / 4) * math.sin(-angle + math.pi / 6)))
-            
+               
 
     def resetPlayer(self):
         self.x = display_width // 2
@@ -159,8 +183,7 @@ class Player():
         self.rtspeed = 0
         self.dir = -90
         self.thrust = False
-        
-            
+         
             
 class deadPlayer():
     def __init__(self, x, y, l):
@@ -171,6 +194,7 @@ class deadPlayer():
         self.dir = random.randrange(0, 360) * math.pi / 180
         self.rtsp = random.uniform(-0.25, 0.25)
         self.speed = random.randint(2,8)
+        
 
 
     def updateDeadPlayer(self):
@@ -259,28 +283,86 @@ class Asteroid():
                                              (self.x + next_v[0] * math.cos(next_v[1] * math.pi / 180),
                                               self.y + next_v[0] * math.sin(next_v[1] * math.pi / 180)))
         
+    
+class HighScore():
+    def __init__(self, filepath):
+        self.filepath = filepath
+        self.highScore = []
+        self.sortedHighScore = []
+        
+        
+    def loadHighScore(self):
+        with open(self.filepath, 'r') as file:
+            data = json.load(file)
+        self.highScore = data
 
+    def saveHighScore(self):
+        with open(self.filepath, 'w') as file:
+            json.dump(self.highScore, file, indent=4)
+    
+    def sortHighScore(self):
+        self.sortedHighScore = sorted(self.highScore, key=lambda x: list(x.values())[0], reverse=True)
+    
 
-
-def gameloop():
+def gameloop(startingState):
     # Initial variables
+    gameState = startingState
+    highScoreLoaded = None
     player = Player(display_width // 2, display_height // 2)
     bullets = []
     asteroides = []
     player_pieces = []
     player_state = "alive"
+    player_lives = 3
+    player_score = 0
     player_death_timer = 0
     player_blink = 0
     player_spawn_dur = 0
+    player_extraLifeMulti = 1
     stage = 1
     
+    try:
+        highScore = HighScore(saveFilePath)
+        highScore.loadHighScore()
+        highScore.sortHighScore()
+        highScoreLoaded = True
+    except FileNotFoundError:
+        highScoreLoaded = False
     
     # Main game loop
-    running = True
-    while running:
+    while gameState != "exit":
+        while gameState == "mainMenu":
+            screen.fill(black)
+            drawText("Asteroides", display_width/2, 100, 100, white)
+            drawText(f"Highscores", display_width/2, 200, 34, white)
+            
+            highScoreNumber = 1
+            highScorePos = 10
+
+            if highScoreLoaded:
+                for item in highScore.sortedHighScore:
+                    for name, score in item.items():
+                        drawText(f"{highScoreNumber}.", display_width/2 - 120, 220+(highScorePos * highScoreNumber*2+10), 22, white, orient="right")
+                        drawText(f"{score}  {name}", display_width/2 + 120, 220+(highScorePos * highScoreNumber*2+10), 22, white, orient="right")
+                        highScoreNumber += 1
+            else:
+                drawText(f"ERROR - NO DATA", display_width/2, 320, 30, white, orient="centered")
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    gameState = "exit"
+                if event.type == pygame.KEYDOWN:
+                    gameState = "playing"
+            pygame.display.update()
+            clock.tick(5)
+            
+
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                gameState = "exit"
+                print("Break")
+                break
+                
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     player.thrust = True
@@ -295,7 +377,6 @@ def gameloop():
                     player.rtspeed = 0
                 if event.key == pygame.K_SPACE and player_state == "alive":
                     bullets.append(Bullet(player.x, player.y, player.dir))
-
 
         screen.fill((0, 0, 0))
         
@@ -336,22 +417,22 @@ def gameloop():
                     player_state = "dead"
                     player_spawn_dur  = 120
                     player_death_timer = 30
-                    player.life -= 1
+                    player_lives -= 1
                     player.resetPlayer()
                     
                 for b in bullets:
                     if kollisjonssjekk(b.x, b.y, a.x, a.y, a.size):
                         bullets.remove(b)
                         if a.s == "large":
-                            player.score += 100
+                            player_score += 100
                             asteroides.append(Asteroid(a.x, a.y, "medium"))
                             asteroides.append(Asteroid(a.x, a.y, "medium"))
                         elif a.s == "medium":
-                            player.score += 150
+                            player_score += 150
                             asteroides.append(Asteroid(a.x, a.y, "small"))
                             asteroides.append(Asteroid(a.x, a.y, "small"))
                         else:
-                            player.score += 200
+                            player_score += 200
                         asteroides.remove(a)
                         
 
@@ -366,6 +447,8 @@ def gameloop():
                 bullet.update_bullet()
                 if bullet.life == 0:
                     bullets.remove(bullet)
+
+
 
 
         # Tegne spiller
@@ -384,13 +467,19 @@ def gameloop():
             
         
         # Tegne poengsum
-        drawText(x=20,y=20,size=30, msg="Poeng: "+str(player.score), color=white, centered=False)
+        drawText(x=15,y=10,size=26, msg="Poeng: "+str(player_score), color=white, orient="none")
         
+        
+        # Tegne antall liv
+        for x in range(player_lives):
+            Player((40+(x*20)),65).drawPlayer()
 
         pygame.display.flip()
         clock.tick(30)
         
-gameloop()
+        highScore.saveHighScore()
+        
+gameloop("mainMenu")
 
 pygame.quit()
 sys.exit()

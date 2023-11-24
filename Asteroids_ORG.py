@@ -310,7 +310,7 @@ class Player:
         y = self.y
         s = player_size
         t = self.thrust
-        # Draw player
+
         pygame.draw.line(gameDisplay, white,
                          (x - (s * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) + a),
                           y - (s * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) + a)),

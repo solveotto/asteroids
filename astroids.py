@@ -44,7 +44,6 @@ def drawText(msg, x, y, size, color, orient="centered"):
     text = pygame.font.Font(font_path, size).render(msg, True, color)
     if orient == "centered":
         # lager et rektangel med koordinatene til texten
-        
         rect = text.get_rect()
         rect.center = (x, y)
     elif orient == "right":
@@ -72,10 +71,7 @@ class Player():
         self.thrust = False
         
 
-    
-    
-    def updatePlayer(self):
-        
+    def updatePlayer(self):        
         # Hastighetsstyring
         speed = math.sqrt(self.hspeed**2 + self.vspeed**2)
         if self.thrust == True:
@@ -301,8 +297,46 @@ class HighScore():
             json.dump(self.highScore, file, indent=4)
     
     def sortHighScore(self):
-        self.sortedHighScore = sorted(self.highScore, key=lambda x: list(x.values())[0], reverse=True)
-    
+        self.highScore = sorted(self.highScore, key=lambda x: list(x.values())[0], reverse=True)
+
+    def getName(self):
+        print("get name")
+        running = True
+        while running:
+            drawText('''YOUR SCORE IS ONE OF THE TEN BEST\nPLEASE ENTER YOUR INITIALS''',
+                    60,20,20, white)
+            
+            for event in pygame.event.get():
+                if event == pygame.QUIT:
+                    running = False
+                    break
+
+    def evaluateScore(self, pScore, pName):
+        break_flag = False  
+        for hs in self.highScore:
+            if break_flag:
+                break
+            for key, value in hs.items():
+                print(pScore, value)
+                if pScore > value:
+                    self.getName()
+                    if len(self.highScore) <= 11:
+                        self.highScore.pop()
+                    else:
+                        self.highScore.insert(self.highScore.index(hs), {pName:pScore})
+                        break_flag = True
+                        break
+                elif len(self.highScore) < 10:
+                        self.getName()
+                        self.highScore.append({pName:pScore})
+                        break_flag = True
+                        break
+                
+                    
+
+        self.saveHighScore()
+        print(self.highScore)
+
 
 def gameloop(startingState):
     # Initial variables
@@ -315,6 +349,7 @@ def gameloop(startingState):
     player_state = "alive"
     player_lives = 3
     player_score = 0
+    player_name = "NEW"
     player_death_timer = 0
     player_blink = 0
     player_spawn_dur = 0
@@ -340,13 +375,14 @@ def gameloop(startingState):
             highScorePos = 10
 
             if highScoreLoaded:
-                for item in highScore.sortedHighScore:
+                for item in highScore.highScore:
                     for name, score in item.items():
                         drawText(f"{highScoreNumber}.", display_width/2 - 120, 220+(highScorePos * highScoreNumber*2+10), 22, white, orient="right")
                         drawText(f"{score}  {name}", display_width/2 + 120, 220+(highScorePos * highScoreNumber*2+10), 22, white, orient="right")
                         highScoreNumber += 1
             else:
                 drawText(f"ERROR - NO DATA", display_width/2, 320, 30, white, orient="centered")
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     gameState = "exit"
@@ -476,10 +512,14 @@ def gameloop(startingState):
 
         pygame.display.flip()
         clock.tick(30)
+
+    highScore.evaluateScore(player_score, player_name)
+
+    
         
-        highScore.saveHighScore()
         
 gameloop("mainMenu")
+
 
 pygame.quit()
 sys.exit()

@@ -285,6 +285,7 @@ class HighScore():
         self.filepath = filepath
         self.highScore = []
         self.sortedHighScore = []
+        self.currentInitials = ["_", "_", "_"]
         
         
     def loadHighScore(self):
@@ -300,16 +301,38 @@ class HighScore():
         self.highScore = sorted(self.highScore, key=lambda x: list(x.values())[0], reverse=True)
 
     def getName(self):
-        print("get name")
+
         running = True
         while running:
-            drawText('''YOUR SCORE IS ONE OF THE TEN BEST\nPLEASE ENTER YOUR INITIALS''',
-                    60,20,20, white)
+            screen.fill(black)
+            drawText("YOUR SCORE IS ONE OF THE TEN BEST.", display_width/2, 50, 30, white, orient="centered")
+            drawText("PLEASE ENTER YOUR INITIALS", display_width/2, 70, 30, white, orient="centered")
+
+            
+            drawText(self.currentInitials[0], display_width/2, display_height/2, 30, white)
+            drawText(self.currentInitials[1], display_width/2+20, display_height/2, 30, white)
+            drawText(self.currentInitials[2], display_width/2+40, display_height/2, 30, white)
+
+            
+            
+                
+            
             
             for event in pygame.event.get():
-                if event == pygame.QUIT:
+                if event.type == pygame.QUIT:
                     running = False
                     break
+                if event.type == pygame.KEYDOWN:
+                    pressed_key = pygame.key.get_pressed
+            
+                    if self.currentInitials[0] == "_":
+                        self.currentInitials[0] == pressed_key
+                        
+            
+            print(self.currentInitials)
+            
+            
+            pygame.display.update()
 
     def evaluateScore(self, pScore, pName):
         break_flag = False  
@@ -317,7 +340,6 @@ class HighScore():
             if break_flag:
                 break
             for key, value in hs.items():
-                print(pScore, value)
                 if pScore > value:
                     self.getName()
                     if len(self.highScore) <= 11:
@@ -333,7 +355,7 @@ class HighScore():
                         break
                 
                     
-
+        self.sortHighScore()
         self.saveHighScore()
         print(self.highScore)
 

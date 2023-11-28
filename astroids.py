@@ -4,6 +4,7 @@ import math
 import random
 import time
 import json
+import pygame_textinput
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -285,7 +286,8 @@ class HighScore():
         self.filepath = filepath
         self.highScore = []
         self.sortedHighScore = []
-        self.currentInitials = ["_", "_", "_"]
+        self.pName = ["_", "_", "_"]
+
         
         
     def loadHighScore(self):
@@ -301,40 +303,59 @@ class HighScore():
         self.highScore = sorted(self.highScore, key=lambda x: list(x.values())[0], reverse=True)
 
     def getName(self):
+        
 
+        
+        
+        manager = pygame_textinput.TextInputManager(validator=lambda input: len(input) <= 3)
+        textInput = pygame_textinput.TextInputVisualizer(manager=manager)
+
+        
         running = True
         while running:
             screen.fill(black)
-            drawText("YOUR SCORE IS ONE OF THE TEN BEST.", display_width/2, 50, 30, white, orient="centered")
-            drawText("PLEASE ENTER YOUR INITIALS", display_width/2, 70, 30, white, orient="centered")
+            drawText("YOUR SCORE IS ONE OF THE TEN BEST.", display_width/2, 60, 30, white, orient="centered")
+            drawText("PLEASE ENTER YOUR INITIALS", display_width/2, 90, 30, white, orient="centered")
 
             
-            drawText(self.currentInitials[0], display_width/2, display_height/2, 30, white)
-            drawText(self.currentInitials[1], display_width/2+20, display_height/2, 30, white)
-            drawText(self.currentInitials[2], display_width/2+40, display_height/2, 30, white)
+            drawText(self.pName[0], display_width/2, display_height/2, 30, white)
+            drawText(self.pName[1], display_width/2+20, display_height/2, 30, white)
+            drawText(self.pName[2], display_width/2+40, display_height/2, 30, white)
 
-            
-            
-                
-            
-            
-            for event in pygame.event.get():
+            events = pygame.event.get() 
+
+            textInput.update(events)
+
+            if len(textInput.value) == 1:
+                self.pName[0] = textInput.value[0]
+                self.pName[1] = "_"
+                self.pName[2] = "_"
+            elif len(textInput.value) == 2:
+                self.pName[0] = textInput.value[0]
+                self.pName[1] = textInput.value[1]
+                self.pName[2] = "_"
+            elif len(textInput.value) == 3:
+                self.pName[0] = textInput.value[0]
+                self.pName[1] = textInput.value[1]
+                self.pName[2] = textInput.value[2]
+            else:
+                self.pName = ["_", "_", "_"]
+
+            for event in events:
                 if event.type == pygame.QUIT:
-                    running = False
-                    break
+                    exit()
                 if event.type == pygame.KEYDOWN:
-                    pressed_key = pygame.key.get_pressed
-            
-                    if self.currentInitials[0] == "_":
-                        self.currentInitials[0] == pressed_key
-                        
-            
-            print(self.currentInitials)
-            
-            
-            pygame.display.update()
+                    print(pygame.key.name(event.key))
+                    if event.key == pygame.K_RETURN:
+                        running = False
+                        break
 
-    def evaluateScore(self, pScore, pName):
+            pygame.display.update()
+        if self.pName == ["_", "_", "_"]:
+            self.pName = [" "," "," "]
+
+
+    def evaluateScore(self, pScore):
         break_flag = False  
         for hs in self.highScore:
             if break_flag:
@@ -342,17 +363,16 @@ class HighScore():
             for key, value in hs.items():
                 if pScore > value:
                     self.getName()
-                    if len(self.highScore) <= 11:
-                        self.highScore.pop()
-                    else:
-                        self.highScore.insert(self.highScore.index(hs), {pName:pScore})
-                        break_flag = True
-                        break
+                    self.highScore.insert(self.highScore.index(hs), {''.join(self.pName):pScore})
+                    break_flag = True
+                    break
                 elif len(self.highScore) < 10:
-                        self.getName()
-                        self.highScore.append({pName:pScore})
-                        break_flag = True
-                        break
+                    self.getName()
+                    self.highScore.append({''.join(self.pName):pScore})
+                    break_flag = True
+                    break
+        if len(self.highScore) >= 11:
+            self.highScore.pop()
                 
                     
         self.sortHighScore()
@@ -409,6 +429,7 @@ def gameloop(startingState):
                 if event.type == pygame.QUIT:
                     gameState = "exit"
                 if event.type == pygame.KEYDOWN:
+
                     gameState = "playing"
             pygame.display.update()
             clock.tick(5)
@@ -535,7 +556,7 @@ def gameloop(startingState):
         pygame.display.flip()
         clock.tick(30)
 
-    highScore.evaluateScore(player_score, player_name)
+    highScore.evaluateScore(player_score)
 
     
         

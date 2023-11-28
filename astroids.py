@@ -303,21 +303,16 @@ class HighScore():
         self.highScore = sorted(self.highScore, key=lambda x: list(x.values())[0], reverse=True)
 
     def getName(self):
-        
-
-        
-        
         manager = pygame_textinput.TextInputManager(validator=lambda input: len(input) <= 3)
         textInput = pygame_textinput.TextInputVisualizer(manager=manager)
 
-        
         running = True
         while running:
             screen.fill(black)
-            drawText("YOUR SCORE IS ONE OF THE TEN BEST.", display_width/2, 60, 30, white, orient="centered")
-            drawText("PLEASE ENTER YOUR INITIALS", display_width/2, 90, 30, white, orient="centered")
-
-            
+            drawText("POENGSUMMEN DIN ER EN AV DE TI BESTE.", display_width/10, 60, 30, white, orient="left")
+            drawText("SKRIV SKRIV INN TRE INITIALER.", display_width/10, 90, 30, white, orient="left")
+            drawText("TRYKK ENTER NÅR DU ER FERIDG.", display_width/10, 120, 30, white, orient="left")
+       
             drawText(self.pName[0], display_width/2, display_height/2, 30, white)
             drawText(self.pName[1], display_width/2+20, display_height/2, 30, white)
             drawText(self.pName[2], display_width/2+40, display_height/2, 30, white)
@@ -326,20 +321,31 @@ class HighScore():
 
             textInput.update(events)
 
-            if len(textInput.value) == 1:
-                self.pName[0] = textInput.value[0]
-                self.pName[1] = "_"
-                self.pName[2] = "_"
-            elif len(textInput.value) == 2:
-                self.pName[0] = textInput.value[0]
-                self.pName[1] = textInput.value[1]
-                self.pName[2] = "_"
-            elif len(textInput.value) == 3:
-                self.pName[0] = textInput.value[0]
-                self.pName[1] = textInput.value[1]
-                self.pName[2] = textInput.value[2]
-            else:
-                self.pName = ["_", "_", "_"]
+            # if len(textInput.value) == 1:
+            #     self.pName[0] = textInput.value[0]
+            #     self.pName[1] = "_"
+            #     self.pName[2] = "_"
+            # elif len(textInput.value) == 2:
+            #     self.pName[0] = textInput.value[0]
+            #     self.pName[1] = textInput.value[1]
+            #     self.pName[2] = "_"
+            # elif len(textInput.value) == 3:
+            #     self.pName[0] = textInput.value[0]
+            #     self.pName[1] = textInput.value[1]
+            #     self.pName[2] = textInput.value[2]
+            # else:
+            #     self.pName = ["_", "_", "_"]
+
+            for letter in textInput.value:
+                self.pName[textInput.value.index(letter)] = letter
+                if len(textInput.value) < 3:
+                    self.pName[2] = "_"
+                elif len(textInput.value) < 2:
+                    self.pName[1] = "_"
+                else:
+                    self.pName = ["_", "_","_"]
+
+            print(textInput.value)
 
             for event in events:
                 if event.type == pygame.QUIT:

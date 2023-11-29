@@ -287,8 +287,6 @@ class HighScore():
         self.highScore = []
         self.sortedHighScore = []
         self.pName = ["_", "_", "_"]
-
-        
         
     def loadHighScore(self):
         with open(self.filepath, 'r') as file:
@@ -321,37 +319,20 @@ class HighScore():
 
             textInput.update(events)
 
-            # if len(textInput.value) == 1:
-            #     self.pName[0] = textInput.value[0]
-            #     self.pName[1] = "_"
-            #     self.pName[2] = "_"
-            # elif len(textInput.value) == 2:
-            #     self.pName[0] = textInput.value[0]
-            #     self.pName[1] = textInput.value[1]
-            #     self.pName[2] = "_"
-            # elif len(textInput.value) == 3:
-            #     self.pName[0] = textInput.value[0]
-            #     self.pName[1] = textInput.value[1]
-            #     self.pName[2] = textInput.value[2]
-            # else:
-            #     self.pName = ["_", "_", "_"]
-
-            for letter in textInput.value:
-                self.pName[textInput.value.index(letter)] = letter
-                if len(textInput.value) < 3:
-                    self.pName[2] = "_"
-                elif len(textInput.value) < 2:
-                    self.pName[1] = "_"
-                else:
-                    self.pName = ["_", "_","_"]
-
-            print(textInput.value)
+            if len(textInput.value) == 1:
+                self.pName = [textInput.value[0], "_", "_"]
+            elif len(textInput.value) == 2:
+                self.pName = [textInput.value[0], textInput.value[1], "_"]
+            elif len(textInput.value) == 3:
+                self.pName = [textInput.value[0], textInput.value[1], textInput.value[2]]
+            else:
+                self.pName = ["_", "_", "_"]
 
             for event in events:
                 if event.type == pygame.QUIT:
-                    exit()
+                    running = False
+                    sys.exit()
                 if event.type == pygame.KEYDOWN:
-                    print(pygame.key.name(event.key))
                     if event.key == pygame.K_RETURN:
                         running = False
                         break
@@ -397,12 +378,12 @@ def gameloop(startingState):
     player_state = "alive"
     player_lives = 3
     player_score = 0
-    player_name = "NEW"
     player_death_timer = 0
     player_blink = 0
     player_spawn_dur = 0
     player_extraLifeMulti = 1
     stage = 1
+    nextLvlDelay  = 0
     
     try:
         highScore = HighScore(saveFilePath)
@@ -414,10 +395,14 @@ def gameloop(startingState):
     
     # Main game loop
     while gameState != "exit":
-        while gameState == "mainMenu":
+        while gameState == "mainMenu" and gameState != "exit":
             screen.fill(black)
             drawText("Asteroides", display_width/2, 100, 100, white)
             drawText(f"Highscores", display_width/2, 200, 34, white)
+            drawText(f"1 COIN 1 PLAY", display_width/2, 550, 26, white)
+            
+
+            
             
             highScoreNumber = 1
             highScorePos = 10
@@ -435,137 +420,149 @@ def gameloop(startingState):
                 if event.type == pygame.QUIT:
                     gameState = "exit"
                 if event.type == pygame.KEYDOWN:
-
                     gameState = "playing"
-            pygame.display.update()
-            clock.tick(5)
-            
+                    
+                        
+            if len(asteroides) == 0:
+                print("SPAWN")
+                dw = display_width
+                dh = display_height       
+                for x in range(6):
 
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                gameState = "exit"
-                print("Break")
-                break
-                
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    player.thrust = True
-                if event.key == pygame.K_LEFT:
-                    player.rtspeed = -player_max_rtspeed
-                if event.key == pygame.K_RIGHT:
-                    player.rtspeed = player_max_rtspeed
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_UP:
-                    player.thrust = False
-                if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
-                    player.rtspeed = 0
-                if event.key == pygame.K_SPACE and player_state == "alive":
-                    bullets.append(Bullet(player.x, player.y, player.dir))
-
-        screen.fill((0, 0, 0))
-        
-        player.updatePlayer()
-        
-        
-        # sjekker om spiller spawner
-        if player_spawn_dur != 0:
-            player_spawn_dur -= 1
-        else:
-            player_state = "alive"
-        
-        
-        # Genererer Asteroider vekk fra senter
-        if len(asteroides) == 0 and player_state == "alive":
-            dw = display_width
-            dh = display_height       
-            for x in range(stage+3):
-                xSpwn = dw / 2
-                ySpwn = dh / 2
-                while xSpwn - dw / 2 < dw / 4 and ySpwn - dh < dh /4:
                     xSpwn = random.randrange(0, dw)
                     ySpwn = random.randrange(0, dh)
-                asteroides.append(Asteroid(xSpwn, ySpwn, "large"))
-
-                
-
-        # Asteroides
-        for a in asteroides:
-            a.update_asteroide()
-            if player_state != "dead":
-                if kollisjonssjekk(player.x, player.y, a.x, a.y, a.size):
-                    player_pieces.append(deadPlayer(player.x, player.y, 5 * player.size / (2 * math.cos(math.atan(1 / 3)))))
-                    player_pieces.append(deadPlayer(player.x, player.y, player.size))
-                    player_pieces.append(deadPlayer(player.x, player.y, player.size / 2))
-
-                    # Spiller dør
-                    player_state = "dead"
-                    player_spawn_dur  = 120
-                    player_death_timer = 30
-                    player_lives -= 1
-                    player.resetPlayer()
+                    asteroides.append(Asteroid(xSpwn, ySpwn, "large"))
+            for a in asteroides:
+                a.update_asteroide()
                     
-                for b in bullets:
-                    if kollisjonssjekk(b.x, b.y, a.x, a.y, a.size):
-                        bullets.remove(b)
-                        if a.s == "large":
-                            player_score += 100
-                            asteroides.append(Asteroid(a.x, a.y, "medium"))
-                            asteroides.append(Asteroid(a.x, a.y, "medium"))
-                        elif a.s == "medium":
-                            player_score += 150
-                            asteroides.append(Asteroid(a.x, a.y, "small"))
-                            asteroides.append(Asteroid(a.x, a.y, "small"))
-                        else:
-                            player_score += 200
-                        asteroides.remove(a)
-                        
-
-        for fragmet in player_pieces:
-            fragmet.updateDeadPlayer()
-        
-        
-
-        # Bullets
-        if len(bullets) > 0:
-            for bullet in bullets:
-                bullet.update_bullet()
-                if bullet.life == 0:
-                    bullets.remove(bullet)
-
-
-
-
-        # Tegne spiller
-        if player_state == "dead":
-            if player_death_timer == 0:
-                if player_blink < 5:
-                    if player_blink == 0:
-                        player_blink = 10
-                    else:
-                        player.drawPlayer()
-                player_blink -= 1
-            else:
-                player_death_timer -= 1
-        else:
-            player.drawPlayer()
             
-        
-        # Tegne poengsum
-        drawText(x=15,y=10,size=26, msg="Poeng: "+str(player_score), color=white, orient="none")
-        
-        
-        # Tegne antall liv
-        for x in range(player_lives):
-            Player((40+(x*20)),65).drawPlayer()
+            pygame.display.update()
+            clock.tick(30)
+            
+        asteroides = []
+        while gameState == "playing" and gameState != "exit":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    gameState = "exit"
+                    
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        player.thrust = True
+                    if event.key == pygame.K_LEFT:
+                        player.rtspeed = -player_max_rtspeed
+                    if event.key == pygame.K_RIGHT:
+                        player.rtspeed = player_max_rtspeed
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_UP:
+                        player.thrust = False
+                    if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
+                        player.rtspeed = 0
+                    if event.key == pygame.K_SPACE and player_state == "alive":
+                        bullets.append(Bullet(player.x, player.y, player.dir))
 
-        pygame.display.flip()
-        clock.tick(30)
+            
 
-    highScore.evaluateScore(player_score)
+            screen.fill((0, 0, 0))
+            player.updatePlayer()
+            
+            
+            # sjekker om spiller spawner
+            if player_spawn_dur != 0:
+                player_spawn_dur -= 1
+            else:
+                player_state = "alive"
+            
+            
+            # Genererer Asteroider vekk fra senter
+            if len(asteroides) == 0 and player_state == "alive":
+                if nextLvlDelay < 30:
+                    nextLvlDelay += 1
+                else:
+                    dw = display_width
+                    dh = display_height
+                    for x in range(stage+3):
+                        xSpwn = dw / 2
+                        ySpwn = dh / 2
+                        while xSpwn - dw / 2 < dw / 4 and ySpwn - dh / 2 < dh /4:
+                            xSpwn = random.randrange(0, dw)
+                            ySpwn = random.randrange(0, dh)
+                        asteroides.append(Asteroid(xSpwn, ySpwn, "large"))
 
-    
+
+            # Asteroides
+            for a in asteroides:
+                a.update_asteroide()
+                if player_state != "dead":
+                    if kollisjonssjekk(player.x, player.y, a.x, a.y, a.size):
+                        player_pieces.append(deadPlayer(player.x, player.y, 5 * player.size / (2 * math.cos(math.atan(1 / 3)))))
+                        player_pieces.append(deadPlayer(player.x, player.y, player.size))
+                        player_pieces.append(deadPlayer(player.x, player.y, player.size / 2))
+
+                        # Spiller dør
+                        player_state = "dead"
+                        player_spawn_dur  = 120
+                        player_death_timer = 30
+                        player_lives -= 1
+                        player.resetPlayer()
+                        
+                    for b in bullets:
+                        if kollisjonssjekk(b.x, b.y, a.x, a.y, a.size):
+                            bullets.remove(b)
+                            if a.s == "large":
+                                player_score += 100
+                                asteroides.append(Asteroid(a.x, a.y, "medium"))
+                                asteroides.append(Asteroid(a.x, a.y, "medium"))
+                            elif a.s == "medium":
+                                player_score += 150
+                                asteroides.append(Asteroid(a.x, a.y, "small"))
+                                asteroides.append(Asteroid(a.x, a.y, "small"))
+                            else:
+                                player_score += 200
+                            asteroides.remove(a)
+                            
+
+            for fragmet in player_pieces:
+                fragmet.updateDeadPlayer()
         
+
+            # Bullets
+            if len(bullets) > 0:
+                for bullet in bullets:
+                    bullet.update_bullet()
+                    if bullet.life == 0:
+                        bullets.remove(bullet)
+
+            # Tegne spiller
+            if player_state != "gameOver":
+                if player_state == "dead":
+                    if player_death_timer == 0:
+                        if player_blink < 5:
+                            if player_blink == 0:
+                                player_blink = 10
+                            else:
+                                player.drawPlayer()
+                        player_blink -= 1
+                    else:
+                        player_death_timer -= 1
+                else:
+                    player.drawPlayer()
+
+            if player_lives == 0:
+                gameState = "mainMenu"
+                highScore.evaluateScore(player_score)
+                gameloop("mainMenu") 
+            
+            # Tegne poengsum
+            drawText(x=15,y=10,size=26, msg="Poeng: "+str(player_score), color=white, orient="none")
+            
+            
+            # Tegne antall liv
+            for x in range(player_lives):
+                Player((40+(x*20)),65).drawPlayer()
+
+            pygame.display.flip()
+            clock.tick(30)
+
         
 gameloop("mainMenu")
 

@@ -45,7 +45,7 @@ yellow = (231, 245, 39)
 black = (0, 0, 0)
 
 
-def kollisjonssjekk(x, y, x2, y2, size):
+def collision(x, y, x2, y2, size):
     if x > x2 - size and x < x2 + size and y > y2 - size and y < y2 + size:
         return True
     return False
@@ -260,6 +260,7 @@ class Asteroid():
         self.dir = random.randrange(0,360) * math.pi / 180
         self.speed = random.randrange(1,5)
 
+        # Lager tilfeldige vektorer helt til det danner en hel sirkel
         full_circle = random.uniform(18,36)
         dist = random.uniform(self.size / 2, self.size)
         self.vectors = []
@@ -270,11 +271,11 @@ class Asteroid():
 
 
     def update_asteroide(self):
-        # Move asteroide  
+        # MBeveger astroide 
         self.x += self.speed * math.cos(self.dir)
         self.y += self.speed * math.sin(self.dir)
 
-        # Check for wrapping
+        # Wrapping
         if self.x > display_width:
             self.x = 0
         elif self.x < 0:
@@ -284,6 +285,8 @@ class Asteroid():
         elif self.y < 0:
             self.y = display_height
 
+        
+        # Tegner astroiden basert til vektorene som alt er laget
         for v in range(len(self.vectors)):
             if v == len(self.vectors) -1:
                 next_v = self.vectors[0]
@@ -315,22 +318,23 @@ class Ufo():
     def create_ufo(self):
         self.state = "alive"
 
-        # Random size
-        if random.randint(0,1000000) == 0:
+        # Størrelse
+        if random.randint(0,1) == 0:
             self.size = 20
             self.type = "large"
         else:
             self.size = 10
             self.type = "small"
         
-        # Random speed
+        # Hastighet
         self.speed = random.uniform(2, 4)
    
         # Tilfeldig plassering
         self.x = random.randint(100, display_width/2)
         self.y = random.randint(100, display_width/2)
         
-        # Random direction 
+
+        # Tilfeldig retning
         if self.x == 0:
             self.dir = 0 * math.pi / 180
             self.directionChg = (0, 45, -45)
@@ -344,11 +348,11 @@ class Ufo():
         self.y += self.speed * math.sin(self.dir)
         
 
-        # Change direction
+        # Ufo kan endre retning tilfeldig
         if random.randrange(1,100) == 1:
             self.dir = random.choice(self.directionChg)
 
-        # Warping effekt
+        # Warping
         if self.x > display_width:
             self.x = 0
         elif self.x < 0:
@@ -480,7 +484,7 @@ def gameloop(startingState):
     highScoreLoaded = None
     player = Player(display_width // 2, display_height // 2)
     ufo = Ufo()
-    bullets = []
+    player_bullets = []
     asteroides = []
     player_pieces = []
     player_state = "alive"
@@ -569,7 +573,7 @@ def gameloop(startingState):
                     if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
                         player.rtspeed = 0
                     if event.key == pygame.K_SPACE and player_state == "alive":
-                        bullets.append(Bullet(player.x, player.y, player.dir))
+                        player_bullets.append(Bullet(player.x, player.y, player.dir))
 
             
 
@@ -617,7 +621,7 @@ def gameloop(startingState):
                 
                 # Sjekk UFOs kollisjon med spiller
                 if player_state != "dead":
-                    if kollisjonssjekk(player.x, player.y, ufo.x, ufo.y, ufo.size):
+                    if collision(player.x, player.y, ufo.x, ufo.y, ufo.size):
                         ufo.state = "dead"
                         
                         player_pieces.append(deadPlayer(player.x, player.y, 5 * player.size / (2 * math.cos(math.atan(1 / 3)))))
@@ -632,7 +636,7 @@ def gameloop(startingState):
 
                 # Sjekker om UFO kolliderer med astroider
                 for a in asteroides:
-                    if kollisjonssjekk(a.x, a.y, ufo.x, ufo.y, a.size):
+                    if collision(a.x, a.y, ufo.x, ufo.y, a.size):
                         #ufo.bullets.remove(b)opiojk,msv c
 
                         print("UFO COLLIDED WITH ASTROIDE")
@@ -651,8 +655,8 @@ def gameloop(startingState):
                 for b in ufo.bullets:
                     b.update_bullet()
 
-                    # Sjekker treff mot spiller
-                    if kollisjonssjekk(player.x, player.y, b.x, b.y, player.size):
+                    # Sjekker om kule treffer spiller
+                    if collision(player.x, player.y, b.x, b.y, player.size):
                         ufo.bullets.remove(b)
                         player_pieces.append(deadPlayer(player.x, player.y, 5 * player.size / (2 * math.cos(math.atan(1 / 3)))))
                         player_pieces.append(deadPlayer(player.x, player.y, player.size))
@@ -663,38 +667,32 @@ def gameloop(startingState):
                         player_lives -= 1
                         player.resetPlayer()
 
-                    # Sjekker treff mot astroide
+                    # Sjekker om kuler treffer astroide
                     for a in asteroides:
-                        if kollisjonssjekk(b.x, b.y, a.x, a.y, a.size):
+                        if collision(b.x, b.y, a.x, a.y, a.size):
                             if a.type == "large":
                                 asteroides.remove(a)
                                 asteroides.append(Asteroid(a.x,a.y, "small"))
                                 asteroides.append(Asteroid(a.x,a.y, "small"))
                             else:
                                 asteroides.remove(a)
-                                
+
+                    # Fjerner kule etter gitt tid    
                     if b.life <= 0:
                         ufo.bullets.remove(b)
                             
 
-                # Sjekker 
-
                 # Sjekke spillers kuler mot UFO
+                for b in player_bullets:
+                    if collision(b.x, b.y, ufo.x, ufo.y, ufo.size):
+                        ufo.state = "dead"
 
 
-
-                                
-
-
-                    
-
-
-
-            # Astroide-kontroll
+            ## ASTROIDE LOGIKK ##
             for a in asteroides:
                 a.update_asteroide()
                 if player_state != "dead":
-                    if kollisjonssjekk(player.x, player.y, a.x, a.y, a.size):
+                    if collision(player.x, player.y, a.x, a.y, a.size):
                         player_pieces.append(deadPlayer(player.x, player.y, 5 * player.size / (2 * math.cos(math.atan(1 / 3)))))
                         player_pieces.append(deadPlayer(player.x, player.y, player.size))
                         player_pieces.append(deadPlayer(player.x, player.y, player.size / 2))
@@ -705,10 +703,11 @@ def gameloop(startingState):
                         player_death_timer = 30
                         player_lives -= 1
                         player.resetPlayer()
-                        
-                    for b in bullets:
-                        if kollisjonssjekk(b.x, b.y, a.x, a.y, a.size):
-                            bullets.remove(b)
+                    
+                    # Sjekker om spillers kuler treffer astroide
+                    for b in player_bullets:
+                        if collision(b.x, b.y, a.x, a.y, a.size):
+                            player_bullets.remove(b)
                             if a.type == "large":
                                 player_score += 100
                                 asteroides.append(Asteroid(a.x, a.y, "medium"))
@@ -727,11 +726,11 @@ def gameloop(startingState):
         
 
             # Bullets
-            if len(bullets) > 0:
-                for bullet in bullets:
+            if len(player_bullets) > 0:
+                for bullet in player_bullets:
                     bullet.update_bullet()
                     if bullet.life == 0:
-                        bullets.remove(bullet)
+                        player_bullets.remove(bullet)
 
             # Tegne spiller
             if player_state != "gameOver":

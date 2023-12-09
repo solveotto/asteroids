@@ -6,6 +6,15 @@ import time
 import json
 import pygame_textinput
 
+'''
+TO DO's:
+- Add game over screen
+- Add ufo bullet damage
+- lage en funksjon for warp-sjekk
+'''
+
+
+
 pygame.init()
 clock = pygame.time.Clock()
 
@@ -58,6 +67,13 @@ def drawText(msg, x, y, size, color, orient="centered"):
     else:
         rect = (x,y)
     screen.blit(text, rect)
+
+
+
+
+def warp():
+    # Bytte ut alle warp-sjekkene med en funksjon
+    pass
 
 
 class Player():
@@ -213,7 +229,7 @@ class Bullet():
         self.dir = dir
         self.size = 2
         self.speed = 15
-        self.life = 40
+        self.life = 45
     
 
     def update_bullet(self):
@@ -237,7 +253,7 @@ class Asteroid():
             self.size = 20
         else:
             self.size = 10
-        self.s = s
+        self.type = s
         
 
         # Setter random retning og fart
@@ -280,7 +296,98 @@ class Asteroid():
                                              (self.x + next_v[0] * math.cos(next_v[1] * math.pi / 180),
                                               self.y + next_v[0] * math.sin(next_v[1] * math.pi / 180)))
         
-    
+
+class Ufo():
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.dir = 0
+        self.directionChg = ()
+        self.bullets = []
+        self.bdir = 0 
+        self.bdelay = 30
+        self.state = "dead"
+        self.type = "large"
+        self.size = 20
+        self.speed = 2
+        
+        
+    def create_ufo(self):
+        self.state = "alive"
+
+        # Random size
+        if random.randint(0,1000000) == 0:
+            self.size = 20
+            self.type = "large"
+        else:
+            self.size = 10
+            self.type = "small"
+        
+        # Random speed
+        self.speed = random.uniform(2, 4)
+   
+        # Tilfeldig plassering
+        self.x = random.randint(100, display_width/2)
+        self.y = random.randint(100, display_width/2)
+        
+        # Random direction 
+        if self.x == 0:
+            self.dir = 0 * math.pi / 180
+            self.directionChg = (0, 45, -45)
+        else:
+            self.dir = 180 * math.pi / 180
+            self.directionChg = (180, -180, 135, -135)
+
+
+    def update_ufo(self):
+        self.x += self.speed * math.cos(self.dir)
+        self.y += self.speed * math.sin(self.dir)
+        
+
+        # Change direction
+        if random.randrange(1,100) == 1:
+            self.dir = random.choice(self.directionChg)
+
+        # Warping effekt
+        if self.x > display_width:
+            self.x = 0
+        elif self.x < 0:
+            self.x = display_width
+        elif self.y > display_height:
+            self.y = 0
+        elif self.y < 0:
+            self.y = display_height
+
+
+        # Skyting
+        if self.bdelay == 0:
+            # Store ufoer skyter tilfeldig
+            if self.type == "large":
+                self.bdir = random.randint(0,360)
+                self.bullets.append(Bullet(self.x, self.y, self.bdir))
+            # Små sikter bedre og bedre for hvert brett.
+            elif self.type == "small":
+                self.bullets.append(Bullet(self.x, self.y, self.bdir))
+
+            self.bdelay = 30
+        else:
+            self.bdelay -= 1
+            
+        
+    def draw_ufo(self):
+        pygame.draw.polygon(screen, white, [(self.x+self.size,self.y), 
+                                            (self.x+self.size/2 ,self.y+self.size/3),
+                                            (self.x-self.size/2, self.y+self.size/3),
+                                            (self.x-self.size, self.y),
+                                            (self.x-self.size/3, self.y-self.size/3),
+                                            (self.x+self.size/3, self.y-self.size/3)], width=1)
+        pygame.draw.line(screen, white, (self.x-self.size, self.y), (self.x+self.size, self.y))
+        pygame.draw.polygon(screen, white, [(self.x-self.size/3, self.y-self.size/3),
+                                            (self.x-self.size/5, self.y-(self.size-self.size/4)),
+                                            (self.x+self.size/5, self.y-(self.size-self.size/4)),
+                                            (self.x+self.size/3, self.y-self.size/3)], width=1)
+
+
 class HighScore():
     def __init__(self, filepath):
         self.filepath = filepath
@@ -372,6 +479,7 @@ def gameloop(startingState):
     gameState = startingState
     highScoreLoaded = None
     player = Player(display_width // 2, display_height // 2)
+    ufo = Ufo()
     bullets = []
     asteroides = []
     player_pieces = []
@@ -384,6 +492,9 @@ def gameloop(startingState):
     player_extraLifeMulti = 1
     stage = 1
     nextLvlDelay  = 0
+    small_ufo_acc = 10
+
+
     
     try:
         highScore = HighScore(saveFilePath)
@@ -392,6 +503,7 @@ def gameloop(startingState):
         highScoreLoaded = True
     except FileNotFoundError:
         highScoreLoaded = False
+
     
     # Main game loop
     while gameState != "exit":
@@ -399,10 +511,7 @@ def gameloop(startingState):
             screen.fill(black)
             drawText("Asteroides", display_width/2, 100, 100, white)
             drawText(f"Highscores", display_width/2, 200, 34, white)
-            drawText(f"1 COIN 1 PLAY", display_width/2, 550, 26, white)
-            
-
-            
+            drawText(f"1 COIN 1 PLAY", display_width/2, 550, 26, white)  
             
             highScoreNumber = 1
             highScorePos = 10
@@ -423,23 +532,25 @@ def gameloop(startingState):
                     gameState = "playing"
                     
                         
-            if len(asteroides) == 0:
-                print("SPAWN")
-                dw = display_width
-                dh = display_height       
-                for x in range(6):
-
-                    xSpwn = random.randrange(0, dw)
-                    ySpwn = random.randrange(0, dh)
+            if len(asteroides) == 0:     
+                for x in range(4):
+                    xSpwn = random.randint(0, display_width/2)
+                    ySpwn = random.randint(0, display_height/2)
                     asteroides.append(Asteroid(xSpwn, ySpwn, "large"))
             for a in asteroides:
                 a.update_asteroide()
-                    
             
+            if gameState == "playing":
+                # Tilbakestiller astroider fra mainMenu   
+                asteroides = []                    
+
+
             pygame.display.update()
             clock.tick(30)
-            
-        asteroides = []
+
+
+
+
         while gameState == "playing" and gameState != "exit":
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -480,7 +591,7 @@ def gameloop(startingState):
                 else:
                     dw = display_width
                     dh = display_height
-                    for x in range(stage+3):
+                    for x in range(stage+6):
                         xSpwn = dw / 2
                         ySpwn = dh / 2
                         while xSpwn - dw / 2 < dw / 4 and ySpwn - dh / 2 < dh /4:
@@ -489,7 +600,97 @@ def gameloop(startingState):
                         asteroides.append(Asteroid(xSpwn, ySpwn, "large"))
 
 
-            # Asteroides
+            ## UFO LOGIKK ##
+            if ufo.state == "dead":
+                if random.randrange(0,100) == 0:
+                    ufo.create_ufo()
+                    print("ufo created")
+            else:
+                # UFO-kontroll
+            
+                acc = small_ufo_acc * 4 / stage
+                ufo.bdir = math.degrees(math.atan2(-ufo.y + player.y, -ufo.x + player.x) + 
+                                        math.radians(random.uniform(acc, -acc)))
+
+                ufo.update_ufo()
+                ufo.draw_ufo()
+                
+                # Sjekk UFOs kollisjon med spiller
+                if player_state != "dead":
+                    if kollisjonssjekk(player.x, player.y, ufo.x, ufo.y, ufo.size):
+                        ufo.state = "dead"
+                        
+                        player_pieces.append(deadPlayer(player.x, player.y, 5 * player.size / (2 * math.cos(math.atan(1 / 3)))))
+                        player_pieces.append(deadPlayer(player.x, player.y, player.size))
+                        player_pieces.append(deadPlayer(player.x, player.y, player.size / 2))
+                        player_state = "dead"
+                        player_spawn_dur  = 120
+                        player_death_timer = 30
+                        player_lives -= 1
+                        player.resetPlayer()
+                
+
+                # Sjekker om UFO kolliderer med astroider
+                for a in asteroides:
+                    if kollisjonssjekk(a.x, a.y, ufo.x, ufo.y, a.size):
+                        #ufo.bullets.remove(b)opiojk,msv c
+
+                        print("UFO COLLIDED WITH ASTROIDE")
+                        ufo.state = "dead"
+
+                        if a.type == "large":
+                            asteroides.append(Asteroid(a.x,a.y, "small"))
+                            asteroides.append(Asteroid(a.x,a.y, "small"))
+                        else:
+                            pass
+
+                        asteroides.remove(a)
+
+                
+                # UFO kuler
+                for b in ufo.bullets:
+                    b.update_bullet()
+
+                    # Sjekker treff mot spiller
+                    if kollisjonssjekk(player.x, player.y, b.x, b.y, player.size):
+                        ufo.bullets.remove(b)
+                        player_pieces.append(deadPlayer(player.x, player.y, 5 * player.size / (2 * math.cos(math.atan(1 / 3)))))
+                        player_pieces.append(deadPlayer(player.x, player.y, player.size))
+                        player_pieces.append(deadPlayer(player.x, player.y, player.size / 2))
+                        player_state = "dead"
+                        player_spawn_dur  = 120
+                        player_death_timer = 30
+                        player_lives -= 1
+                        player.resetPlayer()
+
+                    # Sjekker treff mot astroide
+                    for a in asteroides:
+                        if kollisjonssjekk(b.x, b.y, a.x, a.y, a.size):
+                            if a.type == "large":
+                                asteroides.remove(a)
+                                asteroides.append(Asteroid(a.x,a.y, "small"))
+                                asteroides.append(Asteroid(a.x,a.y, "small"))
+                            else:
+                                asteroides.remove(a)
+                                
+                    if b.life <= 0:
+                        ufo.bullets.remove(b)
+                            
+
+                # Sjekker 
+
+                # Sjekke spillers kuler mot UFO
+
+
+
+                                
+
+
+                    
+
+
+
+            # Astroide-kontroll
             for a in asteroides:
                 a.update_asteroide()
                 if player_state != "dead":
@@ -508,11 +709,11 @@ def gameloop(startingState):
                     for b in bullets:
                         if kollisjonssjekk(b.x, b.y, a.x, a.y, a.size):
                             bullets.remove(b)
-                            if a.s == "large":
+                            if a.type == "large":
                                 player_score += 100
                                 asteroides.append(Asteroid(a.x, a.y, "medium"))
                                 asteroides.append(Asteroid(a.x, a.y, "medium"))
-                            elif a.s == "medium":
+                            elif a.type == "medium":
                                 player_score += 150
                                 asteroides.append(Asteroid(a.x, a.y, "small"))
                                 asteroides.append(Asteroid(a.x, a.y, "small"))

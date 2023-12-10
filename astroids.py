@@ -9,7 +9,6 @@ import pygame_textinput
 '''
 TO DO's:
 - Add game over screen
-- Add ufo bullet damage
 - lage en funksjon for warp-sjekk
 '''
 
@@ -209,7 +208,6 @@ class deadPlayer():
         self.speed = random.randint(2,8)
         
 
-
     def updateDeadPlayer(self):
             pygame.draw.line(screen, white, 
                                 (self.x + self.length * math.cos(self.angle) / 2,
@@ -221,6 +219,7 @@ class deadPlayer():
             self.y += self.speed * math.sin(self.dir)
             self.angle += self.rtsp
         
+
 
 class Bullet():
     def __init__(self, x, y, dir) -> None:
@@ -240,6 +239,7 @@ class Bullet():
         pygame.draw.circle(screen, white, (int(self.x), int(self.y)), self.size)
         
         self.life -= 1
+
 
 
 class Asteroid():
@@ -300,6 +300,7 @@ class Asteroid():
                                               self.y + next_v[0] * math.sin(next_v[1] * math.pi / 180)))
         
 
+
 class Ufo():
     def __init__(self):
         self.x = 0
@@ -330,8 +331,8 @@ class Ufo():
         self.speed = random.uniform(2, 4)
    
         # Tilfeldig plassering
-        self.x = random.randint(100, display_width/2)
-        self.y = random.randint(100, display_width/2)
+        self.x = random.randint(100, int(display_width/2))
+        self.y = random.randint(100, int(display_width/2))
         
 
         # Tilfeldig retning
@@ -415,19 +416,18 @@ class HighScore():
         manager = pygame_textinput.TextInputManager(validator=lambda input: len(input) <= 3)
         textInput = pygame_textinput.TextInputVisualizer(manager=manager)
 
+        # Highscore loop
         running = True
         while running:
             screen.fill(black)
             drawText("POENGSUMMEN DIN ER EN AV DE TI BESTE.", display_width/10, 60, 30, white, orient="left")
             drawText("SKRIV SKRIV INN TRE INITIALER.", display_width/10, 90, 30, white, orient="left")
             drawText("TRYKK ENTER NÅR DU ER FERIDG.", display_width/10, 120, 30, white, orient="left")
-       
             drawText(self.pName[0], display_width/2, display_height/2, 30, white)
             drawText(self.pName[1], display_width/2+20, display_height/2, 30, white)
             drawText(self.pName[2], display_width/2+40, display_height/2, 30, white)
 
             events = pygame.event.get() 
-
             textInput.update(events)
 
             if len(textInput.value) == 1:
@@ -453,6 +453,7 @@ class HighScore():
             self.pName = [" "," "," "]
 
 
+    # Sjekker om poengsummen er en highscore
     def evaluateScore(self, pScore):
         break_flag = False  
         for hs in self.highScore:
@@ -471,11 +472,11 @@ class HighScore():
                     break
         if len(self.highScore) >= 11:
             self.highScore.pop()
-                
-                    
+                          
         self.sortHighScore()
         self.saveHighScore()
         print(self.highScore)
+
 
 
 def gameloop(startingState):
@@ -498,8 +499,6 @@ def gameloop(startingState):
     nextLvlDelay  = 0
     small_ufo_acc = 10
 
-
-    
     try:
         highScore = HighScore(saveFilePath)
         highScore.loadHighScore()
@@ -508,9 +507,11 @@ def gameloop(startingState):
     except FileNotFoundError:
         highScoreLoaded = False
 
-    
+
     # Main game loop
     while gameState != "exit":
+
+        # HOVEDMENY
         while gameState == "mainMenu" and gameState != "exit":
             screen.fill(black)
             drawText("Asteroides", display_width/2, 100, 100, white)
@@ -535,11 +536,12 @@ def gameloop(startingState):
                 if event.type == pygame.KEYDOWN:
                     gameState = "playing"
                     
-                        
+            
+            # Astroide i bakgrunnen
             if len(asteroides) == 0:     
                 for x in range(4):
-                    xSpwn = random.randint(0, display_width/2)
-                    ySpwn = random.randint(0, display_height/2)
+                    xSpwn = random.randint(0, int(display_width/2))
+                    ySpwn = random.randint(0, int(display_height/2))
                     asteroides.append(Asteroid(xSpwn, ySpwn, "large"))
             for a in asteroides:
                 a.update_asteroide()
@@ -554,7 +556,7 @@ def gameloop(startingState):
 
 
 
-
+        # SPILL LOOP
         while gameState == "playing" and gameState != "exit":
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -610,8 +612,7 @@ def gameloop(startingState):
                     ufo.create_ufo()
                     print("ufo created")
             else:
-                # UFO-kontroll
-            
+                # Ufo nøyaktighet og kuleretning
                 acc = small_ufo_acc * 4 / stage
                 ufo.bdir = math.degrees(math.atan2(-ufo.y + player.y, -ufo.x + player.x) + 
                                         math.radians(random.uniform(acc, -acc)))
@@ -637,11 +638,7 @@ def gameloop(startingState):
                 # Sjekker om UFO kolliderer med astroider
                 for a in asteroides:
                     if collision(a.x, a.y, ufo.x, ufo.y, a.size):
-                        #ufo.bullets.remove(b)opiojk,msv c
-
-                        print("UFO COLLIDED WITH ASTROIDE")
                         ufo.state = "dead"
-
                         if a.type == "large":
                             asteroides.append(Asteroid(a.x,a.y, "small"))
                             asteroides.append(Asteroid(a.x,a.y, "small"))

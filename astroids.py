@@ -44,6 +44,11 @@ yellow = (231, 245, 39)
 black = (0, 0, 0)
 
 
+# Lyder
+snd_fire = pygame.mixer.Sound("sounds/fire.wav")
+snd_thrust = pygame.mixer.Sound("sounds/thrust.wav")
+snd_bang_large = pygame.mixer.Sound("sounds/bangLarge.wav") 
+
 def collision(x, y, x2, y2, size):
     if x > x2 - size and x < x2 + size and y > y2 - size and y < y2 + size:
         return True
@@ -577,10 +582,14 @@ def gameloop(startingState):
                     if event.key == pygame.K_SPACE and player_state == "alive":
                         player_bullets.append(Bullet(player.x, player.y, player.dir))
 
+                        snd_fire.play()
             
 
             screen.fill((0, 0, 0))
             player.updatePlayer()
+
+
+
             
             
             # sjekker om spiller spawner

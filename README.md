@@ -1,4 +1,4 @@
-# astroids
+# Asteroids
 
 Kilder jeg har blitt innspirert av eller rett og slett brukt:
 

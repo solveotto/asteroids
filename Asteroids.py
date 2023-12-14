@@ -657,8 +657,8 @@ def gameloop(startingState):
 
 
         ## UFO LOGIKK ##
-        if ufo.state == "dead" and player_state == "alive":
-            if ufo.spawn_time == 0:
+        if ufo.state == "dead":
+            if ufo.spawn_time == 0 and player_state == "alive":
                 if random.randrange(0,1000) == 0:
                     ufo.create_ufo()
                     print("ufo created")

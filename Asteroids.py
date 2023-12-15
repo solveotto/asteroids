@@ -8,8 +8,7 @@ import pygame_textinput
 
 
 '''
-TO DO's: 
-- lage en funksjon for warp-sjekk
+TO DO's:
 - Flytte flere spillervariabler i klassen
 - Gjøre om main loop til en klasse.
 '''
@@ -19,72 +18,45 @@ TO DO's:
 pygame.init()
 clock = pygame.time.Clock()
 
-### Konstanter ###
+### CONSTANTS ###
 # Fysikk
-fd_fric = 0.5
-bd_fric = 0.1
-player_max_speed = 20.0
-player_max_rtspeed = 10
+FD_FRIC = 0.5
+BD_FRIC = 0.1
+PLAYER_MAX_SPEED = 20.0
+PLAYER_MAX_RTSPEED = 10
 
 
 # Skjerm
-display_width  = 800
-display_height = 600
-screen = pygame.display.set_mode((display_width, display_height))
+DISPLAY_WIDTH  = 800
+DISPLAY_HEIGHT = 600
+SCREEN = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
+
+# File paths
+SAVE_FILE_PATH = "highscore.json"
+
+# Fonts
+FONT_PATH = 'fonts/Hyperspace-JvEM.ttf' 
+FONT_SIZE = 36 
+CUSTOM_FONT = pygame.font.Font(FONT_PATH, FONT_SIZE)
+
+# Color
+WHITE = (255, 255, 255)
+YELLOW = (231, 245, 39)
+BLACK = (0, 0, 0)
 
 
-# Lagring
-saveFilePath = "highscore.json"
-font_path = 'fonts/Hyperspace-JvEM.ttf'  # Replace with the path to your font file
-font_size = 36  # You can set this to any size you want
-custom_font = pygame.font.Font(font_path, font_size)
+# Sound
+SND_FIRE = pygame.mixer.Sound("sounds/fire.wav")
+SND_THRUST = pygame.mixer.Sound("sounds/thrust.wav")
+SND_BANG_LARGE = pygame.mixer.Sound("sounds/bangLarge.wav") 
 
-
-# Farger
-white = (255, 255, 255)
-yellow = (231, 245, 39)
-black = (0, 0, 0)
-
-
-# Lyder
-snd_fire = pygame.mixer.Sound("sounds/fire.wav")
-snd_thrust = pygame.mixer.Sound("sounds/thrust.wav")
-snd_bang_large = pygame.mixer.Sound("sounds/bangLarge.wav") 
-
-
-
-
-def collision(x, y, x2, y2, size):
-    if x > x2 - size and x < x2 + size and y > y2 - size and y < y2 + size:
-        return True
-    return False
-
-def drawText(msg, x, y, size, color, orient="centered"):
-    text = pygame.font.Font(font_path, size).render(msg, True, color)
-    if orient == "centered":
-        # lager et rektangel med koordinatene til texten
-        rect = text.get_rect()
-        rect.center = (x, y)
-    elif orient == "right":
-        rect = text.get_rect()
-        rect.right = x
-        rect.y = y
-    elif orient == "left":
-        rect = text.get_rect()
-        rect.left = x
-        rect.y = y
-    else:
-        rect = (x,y)
-    screen.blit(text, rect)
-
-
-
-def warp():
-    # Bytte ut alle warp-sjekkene med en funksjon
-    pass
 
 
 class Player():
+    '''Creates an controls the player.
+    
+    Has a function for creating the player en a function for drawing the player
+    '''
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -94,23 +66,26 @@ class Player():
         self.rtspeed = 0
         self.dir = -90
         self.thrust = False
+        self.score = 0
+        self.lives = 3
+        self.extra_lives_multiplier = 1
         
 
     def updatePlayer(self):        
-        # Hastighetsstyring
+        '''Updates the position, rotation and speed of the player object'''
         speed = math.sqrt(self.hspeed**2 + self.vspeed**2)
         if self.thrust == True:
-            if speed < player_max_speed:
-                self.hspeed += fd_fric * math.cos(self.dir * math.pi / 180)
-                self.vspeed += fd_fric * math.sin(self.dir * math.pi / 180)
+            if speed < PLAYER_MAX_SPEED:
+                self.hspeed += FD_FRIC * math.cos(self.dir * math.pi / 180)
+                self.vspeed += FD_FRIC * math.sin(self.dir * math.pi / 180)
             else:
                 # BUG: Styringen endrer seg når skipet kommer i topphastiget.
-                self.hspeed = player_max_speed * math.cos(self.dir * math.pi / 180)
-                self.vspeed = player_max_speed * math.sin(self.dir * math.pi / 180)
+                self.hspeed = PLAYER_MAX_SPEED * math.cos(self.dir * math.pi / 180)
+                self.vspeed = PLAYER_MAX_SPEED * math.sin(self.dir * math.pi / 180)
         else:
-            if speed - bd_fric > 0:
-                chg_hspeed = (bd_fric * math.cos(self.vspeed / self.hspeed))
-                chg_vspeed = (bd_fric * math.sin(self.vspeed / self.hspeed))
+            if speed - BD_FRIC > 0:
+                chg_hspeed = (BD_FRIC * math.cos(self.vspeed / self.hspeed))
+                chg_vspeed = (BD_FRIC * math.sin(self.vspeed / self.hspeed))
                 if self.hspeed != 0:
                     if chg_hspeed / abs(chg_hspeed) == self.hspeed / abs(self.hspeed):
                         self.hspeed -= chg_hspeed
@@ -127,14 +102,8 @@ class Player():
 
         
         # Warp-effekt:
-        if self.y < 0:
-            self.y = display_height
-        elif self.y > display_height:
-            self.y = 0
-        elif self.x < 0:
-            self.x = display_width
-        elif self.x > display_width:
-            self.x = 0
+        self.x, self.y = check_warp(self.x, self.y)
+
         
         # Oppdaterer posisjon og rotasjon
         self.x += self.hspeed
@@ -143,6 +112,7 @@ class Player():
 
 
     def drawPlayer(self):
+        '''Draws the player on the screen'''
         angle = math.radians(self.dir)
         size = self.size
         x = self.x
@@ -150,7 +120,7 @@ class Player():
 
         # Tegner romskipet:
         # Venstre strek.
-        pygame.draw.line(screen, white,
+        pygame.draw.line(SCREEN, WHITE,
                          # Øverste punktet på streken.
                          # Forklaring: x/y-koordinat * størrelse * vinkelen. 
                          # Lager et nytt punkt basert på størrelse og vinkel
@@ -161,7 +131,7 @@ class Player():
                          (x - (size * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) + angle),
                           y - (size * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) + angle)))
         # Høyre strek.
-        pygame.draw.line(screen, white,
+        pygame.draw.line(SCREEN, WHITE,
                          # Øverste punktet på streken.
                          (x + size * math.cos(angle), 
                           y + size * math.sin(angle)),
@@ -169,7 +139,7 @@ class Player():
                          (x - (size * math.sqrt(130) / 12) * math.cos(math.atan(7 / 9) - angle),
                           y + (size * math.sqrt(130) / 12) * math.sin(math.atan(7 / 9) - angle)))
         # Nederste strek.
-        pygame.draw.line(screen, white,
+        pygame.draw.line(SCREEN, WHITE,
                          # Venstre punkt.
                          (x - (size * math.sqrt(2) / 2) * math.cos(math.pi / 4 + angle),
                           y - (size * math.sqrt(2) / 2) * math.sin(math.pi / 4 + angle)),
@@ -180,7 +150,7 @@ class Player():
         # Hvis det blir gitt thrust, så tegnes det en stikkflamme.
         if self.thrust:
             # Venstre strek
-            pygame.draw.line(screen, yellow,     
+            pygame.draw.line(SCREEN, YELLOW,     
                              # Startpunkt (X, Y)
                              (x - size * math.cos(angle), y - size * math.sin(angle)),
                              # Sluttpunkt (X, Y)
@@ -188,7 +158,7 @@ class Player():
                               y - (size * math.sqrt(5) / 4) * math.sin(angle + math.pi / 6)))
             
             # Høyre strek
-            pygame.draw.line(screen, yellow,
+            pygame.draw.line(SCREEN, YELLOW,
                              # Startpunkt (X, Y)
                              (x - size * math.cos(angle), y + size * math.sin(-angle)),
                              # Sluttpunkt (X, Y)
@@ -197,8 +167,8 @@ class Player():
                
 
     def resetPlayer(self):
-        self.x = display_width // 2
-        self.y = display_height // 2
+        self.x = DISPLAY_WIDTH // 2
+        self.y = DISPLAY_HEIGHT // 2
         self.hspeed = 0
         self.vspeed = 0
         self.rtspeed = 0
@@ -218,7 +188,7 @@ class DeadPlayer():
         
 
     def update_dead_player(self):
-            pygame.draw.line(screen, white, 
+            pygame.draw.line(SCREEN, WHITE, 
                                 (self.x + self.length * math.cos(self.angle) / 2,
                                 self.y + self.length * math.sin(self.angle) / 2),
                                 (self.x - self.length * math.cos(self.angle) / 2,
@@ -245,19 +215,12 @@ class Bullet():
         self.x += self.speed * math.cos(self.dir * math.pi / 180)
         self.y += self.speed * math.sin(self.dir * math.pi / 180)
         
-        pygame.draw.circle(screen, white, (int(self.x), int(self.y)), self.size)
+        pygame.draw.circle(SCREEN, WHITE, (int(self.x), int(self.y)), self.size)
         
         self.life -= 1
 
         # Warp-effekt:
-        if self.y < 0:
-            self.y = display_height
-        elif self.y > display_height:
-            self.y = 0
-        elif self.x < 0:
-            self.x = display_width
-        elif self.x > display_width:
-            self.x = 0
+        self.x, self.y = check_warp(self.x, self.y)
 
 
 
@@ -295,14 +258,14 @@ class Rocks():
         self.y += self.speed * math.sin(self.dir)
 
         # Wrapping
-        if self.x > display_width:
+        if self.x > DISPLAY_WIDTH:
             self.x = 0
         elif self.x < 0:
-            self.x = display_width
-        elif self.y > display_height:
+            self.x = DISPLAY_WIDTH
+        elif self.y > DISPLAY_HEIGHT:
             self.y = 0
         elif self.y < 0:
-            self.y = display_height
+            self.y = DISPLAY_HEIGHT
 
         
         # Tegner astroiden basert til vektorene som alt er laget
@@ -313,7 +276,7 @@ class Rocks():
                 next_v = self.vectors[v + 1]
             this_v = self.vectors[v]
 
-            pygame.draw.line(screen, white, (self.x + this_v[0] * math.cos(this_v[1] * math.pi / 180),
+            pygame.draw.line(SCREEN, WHITE, (self.x + this_v[0] * math.cos(this_v[1] * math.pi / 180),
                                              self.y + this_v[0] * math.sin(this_v[1] * math.pi / 180)),
                                              (self.x + next_v[0] * math.cos(next_v[1] * math.pi / 180),
                                               self.y + next_v[0] * math.sin(next_v[1] * math.pi / 180)))
@@ -336,14 +299,18 @@ class Ufo():
         self.speed = 2
         
         
-    def create_ufo(self):
+    def create_ufo(self, player_score):
         self.state = "alive"
         self.spawn_time = 120
 
         # Størrelse
-        if random.randint(0,1) == 0:
-            self.size = 20
-            self.type = "large"
+        if player_score < 40000:
+            if random.randint(0,1) == 0:
+                self.size = 20
+                self.type = "large"
+            else:
+                self.size = 10
+                self.type = "small"
         else:
             self.size = 10
             self.type = "small"
@@ -352,8 +319,8 @@ class Ufo():
         self.speed = random.uniform(2, 4)
    
         # Tilfeldig plassering
-        self.x = random.randint(100, int(display_width/2))
-        self.y = random.randint(100, int(display_width/2))
+        self.x = random.randint(100, int(DISPLAY_WIDTH/2))
+        self.y = random.randint(100, int(DISPLAY_WIDTH/2))
         
 
         # Tilfeldig retning
@@ -374,15 +341,8 @@ class Ufo():
         if random.randrange(1,100) == 1:
             self.dir = random.choice(self.directionChg)
 
-        # Warping
-        if self.x > display_width:
-            self.x = 0
-        elif self.x < 0:
-            self.x = display_width
-        elif self.y > display_height:
-            self.y = 0
-        elif self.y < 0:
-            self.y = display_height
+        # Warp-effekt:
+        self.x, self.y = check_warp(self.x, self.y)
 
 
         # Skyting
@@ -408,14 +368,14 @@ class Ufo():
             
         
     def draw_ufo(self):
-        pygame.draw.polygon(screen, white, [(self.x+self.size,self.y), 
+        pygame.draw.polygon(SCREEN, WHITE, [(self.x+self.size,self.y), 
                                             (self.x+self.size/2 ,self.y+self.size/3),
                                             (self.x-self.size/2, self.y+self.size/3),
                                             (self.x-self.size, self.y),
                                             (self.x-self.size/3, self.y-self.size/3),
                                             (self.x+self.size/3, self.y-self.size/3)], width=1)
-        pygame.draw.line(screen, white, (self.x-self.size, self.y), (self.x+self.size, self.y))
-        pygame.draw.polygon(screen, white, [(self.x-self.size/3, self.y-self.size/3),
+        pygame.draw.line(SCREEN, WHITE, (self.x-self.size, self.y), (self.x+self.size, self.y))
+        pygame.draw.polygon(SCREEN, WHITE, [(self.x-self.size/3, self.y-self.size/3),
                                             (self.x-self.size/5, self.y-(self.size-self.size/4)),
                                             (self.x+self.size/5, self.y-(self.size-self.size/4)),
                                             (self.x+self.size/3, self.y-self.size/3)], width=1)
@@ -428,6 +388,7 @@ class HighScore():
         self.sortedHighScore = []
         self.pName = ["_", "_", "_"]
         
+        
     def loadHighScore(self):
         with open(self.filepath, 'r') as file:
             data = json.load(file)
@@ -438,7 +399,10 @@ class HighScore():
             json.dump(self.highScore, file, indent=4)
     
     def sortHighScore(self):
-        self.highScore = sorted(self.highScore, key=lambda x: list(x.values())[0], reverse=True)
+        try:
+            self.highScore = sorted(self.highScore, key=lambda x: list(x.values())[0], reverse=True)
+        except IndexError:
+            pass
 
     def getName(self):
         manager = pygame_textinput.TextInputManager(validator=lambda input: len(input) <= 3)
@@ -447,13 +411,13 @@ class HighScore():
         # Highscore loop
         running = True
         while running:
-            screen.fill(black)
-            drawText("POENGSUMMEN DIN ER EN AV DE TI BESTE.", display_width/10, 60, 30, white, orient="left")
-            drawText("SKRIV SKRIV INN TRE INITIALER.", display_width/10, 90, 30, white, orient="left")
-            drawText("TRYKK ENTER NÅR DU ER FERIDG.", display_width/10, 120, 30, white, orient="left")
-            drawText(self.pName[0], display_width/2, display_height/2, 30, white)
-            drawText(self.pName[1], display_width/2+20, display_height/2, 30, white)
-            drawText(self.pName[2], display_width/2+40, display_height/2, 30, white)
+            SCREEN.fill(BLACK)
+            drawText("POENGSUMMEN DIN ER EN AV DE TI BESTE.", DISPLAY_WIDTH/10, 60, 30, WHITE, orient="left")
+            drawText("SKRIV SKRIV INN TRE INITIALER.", DISPLAY_WIDTH/10, 90, 30, WHITE, orient="left")
+            drawText("TRYKK ENTER NÅR DU ER FERIDG.", DISPLAY_WIDTH/10, 120, 30, WHITE, orient="left")
+            drawText(self.pName[0], DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2, 30, WHITE)
+            drawText(self.pName[1], DISPLAY_WIDTH/2+20, DISPLAY_HEIGHT/2, 30, WHITE)
+            drawText(self.pName[2], DISPLAY_WIDTH/2+40, DISPLAY_HEIGHT/2, 30, WHITE)
 
             events = pygame.event.get() 
             textInput.update(events)
@@ -483,44 +447,96 @@ class HighScore():
 
     # Sjekker om poengsummen er en highscore
     def evaluateScore(self, pScore):
-        break_flag = False  
-        for hs in self.highScore:
-            if break_flag:
-                break
-            for key, value in hs.items():
-                if pScore > value:
-                    self.getName()
-                    self.highScore.insert(self.highScore.index(hs), {''.join(self.pName):pScore})
-                    break_flag = True
+        break_flag = False
+
+        if len(self.highScore) > 0:
+            for hs in self.highScore:
+                if break_flag:
                     break
-                elif len(self.highScore) < 10:
-                    self.getName()
-                    self.highScore.append({''.join(self.pName):pScore})
-                    break_flag = True
-                    break
-        if len(self.highScore) >= 11:
-            self.highScore.pop()
+                for key, value in hs.items():
+                    if pScore > value:
+                        self.getName()
+                        self.highScore.insert(self.highScore.index(hs), {''.join(self.pName):pScore})
+                        break_flag = True
+                        break
+                    elif len(self.highScore) < 10:
+                        self.getName()
+                        self.highScore.append({''.join(self.pName):pScore})
+                        break_flag = True
+                        break
+            if len(self.highScore) >= 11:
+                self.highScore.pop()
+        else:
+            self.getName()
+            self.highScore.append({''.join(self.pName):pScore})
                           
         self.sortHighScore()
         self.saveHighScore()
 
 
 
-
-# HighScore
+# Global variables
 try:
-    highScore = HighScore(saveFilePath)
+    highScore = HighScore(SAVE_FILE_PATH)
     highScore.loadHighScore()
-    highScore.sortHighScore()
     highScoreLoaded = True
+    if highScoreLoaded:
+        highScore.sortHighScore()
+
 except FileNotFoundError:
     highScoreLoaded = False
+
+
+def collision(x, y, x2, y2, size):
+    if x > x2 - size and x < x2 + size and y > y2 - size and y < y2 + size:
+        return True
+    return False
+
+def drawText(msg, x, y, size, color, orient="centered"):
+    text = pygame.font.Font(FONT_PATH, size).render(msg, True, color)
+    if orient == "centered":
+        # lager et rektangel med koordinatene til texten
+        rect = text.get_rect()
+        rect.center = (x, y)
+    elif orient == "right":
+        rect = text.get_rect()
+        rect.right = x
+        rect.y = y
+    elif orient == "left":
+        rect = text.get_rect()
+        rect.left = x
+        rect.y = y
+    else:
+        rect = (x,y)
+    SCREEN.blit(text, rect)
+
+
+
+def check_warp(input_x, input_y):
+    
+    x = input_x
+    y = input_y
+
+    if input_y < 0:
+        y = DISPLAY_HEIGHT
+    elif input_y > DISPLAY_HEIGHT:
+        y = 0
+    elif input_x < 0:
+        x = DISPLAY_WIDTH
+    elif input_x > DISPLAY_WIDTH:
+        x = 0
+
+    return x, y 
+
 
 
 def mainMenu():
     mainMenuRunnig = True
     asteroides = []
     menuChoice = "none"
+
+    # HighScore
+
 
     while mainMenuRunnig:
         for event in pygame.event.get():
@@ -532,10 +548,10 @@ def mainMenu():
                 asteroides = []
                 menuChoice = "play"
 
-        screen.fill(black)
-        drawText("Asteroides", display_width/2, 100, 100, white)
-        drawText(f"Highscores", display_width/2, 200, 34, white)
-        drawText(f"1 COIN 1 PLAY", display_width/2, 550, 26, white)  
+        SCREEN.fill(BLACK)
+        drawText("Asteroides", DISPLAY_WIDTH/2, 100, 100, WHITE)
+        drawText(f"Highscores", DISPLAY_WIDTH/2, 200, 34, WHITE)
+        drawText(f"1 COIN 1 PLAY", DISPLAY_WIDTH/2, 550, 26, WHITE)  
         
         highScoreNumber = 1
         highScorePos = 10
@@ -545,18 +561,18 @@ def mainMenu():
         if highScoreLoaded:
             for item in highScore.highScore:
                 for name, score in item.items():
-                    drawText(f"{highScoreNumber}.", display_width/2 - 120, 220+(highScorePos * highScoreNumber*2+10), 22, white, orient="right")
-                    drawText(f"{score}  {name}", display_width/2 + 120, 220+(highScorePos * highScoreNumber*2+10), 22, white, orient="right")
+                    drawText(f"{highScoreNumber}.", DISPLAY_WIDTH/2 - 120, 220+(highScorePos * highScoreNumber*2+10), 22, WHITE, orient="right")
+                    drawText(f"{score}  {name}", DISPLAY_WIDTH/2 + 120, 220+(highScorePos * highScoreNumber*2+10), 22, WHITE, orient="right")
                     highScoreNumber += 1
         else:
-            drawText(f"ERROR - NO DATA", display_width/2, 320, 30, white, orient="centered")
+            drawText(f"ERROR - NO DATA", DISPLAY_WIDTH/2, 320, 30, WHITE, orient="centered")
 
         
         # Astroide i bakgrunnen
         if len(asteroides) == 0:     
             for x in range(4):
-                xSpwn = random.randint(0, int(display_width/2))
-                ySpwn = random.randint(0, int(display_height/2))
+                xSpwn = random.randint(0, int(DISPLAY_WIDTH/2))
+                ySpwn = random.randint(0, int(DISPLAY_HEIGHT/2))
                 asteroides.append(Rocks(xSpwn, ySpwn, "large"))
         for a in asteroides:
             a.update_asteroide()
@@ -572,28 +588,21 @@ def mainMenu():
 def gameloop(startingState):
     # Initial variables
     gameState = startingState
-    highScoreLoaded = None
-    player = Player(display_width // 2, display_height // 2)
+    player = Player(DISPLAY_WIDTH // 2, DISPLAY_HEIGHT // 2)
     ufo = Ufo()
     player_bullets = []
     asteroides = []
     player_pieces = []
     player_state = "alive"
-    player_lives = 3
-    player_score = 0
-    player_death_timer = 0
-    player_blink = 0
+    player_lives = 1
     player_spawn_dur = 0
-    player_extraLifeMulti = 1
+    player_invisible_dur = 0
+    player_blink = 0
     stage = 1
     nextLvlDelay  = 30
     gameOverDelay = 120
     small_ufo_acc = 10
     hyperspace = 0
-
-    print("Game Starting")
-
-
 
 
     # Main loop
@@ -607,9 +616,9 @@ def gameloop(startingState):
                 if event.key == pygame.K_UP:
                     player.thrust = True
                 if event.key == pygame.K_LEFT:
-                    player.rtspeed = -player_max_rtspeed
+                    player.rtspeed = -PLAYER_MAX_RTSPEED
                 if event.key == pygame.K_RIGHT:
-                    player.rtspeed = player_max_rtspeed
+                    player.rtspeed = PLAYER_MAX_RTSPEED
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_UP:
                     player.thrust = False
@@ -617,17 +626,17 @@ def gameloop(startingState):
                     player.rtspeed = 0
                 if event.key == pygame.K_SPACE and player_state == "alive":
                     player_bullets.append(Bullet(player.x, player.y, player.dir))
-                    snd_fire.play()
+                    SND_FIRE.play()
                 if event.key == pygame.K_LSHIFT and player_state == "alive":
                     hyperspace = 30
         
 
-        screen.fill((0, 0, 0))
+        SCREEN.fill((0, 0, 0))
         player.updatePlayer()
 
         # GFX           
         # Current score
-        drawText(x=15,y=10,size=26, msg="Poeng: "+str(player_score), color=white, orient="none")
+        drawText(x=15,y=10,size=26, msg="Poeng: "+str(player.score), color=WHITE, orient="none")
         
         # Current lives
         for x in range(player_lives):
@@ -646,22 +655,28 @@ def gameloop(startingState):
                 if bullet.life == 0:
                     player_bullets.remove(bullet)
 
+        # Check ivinsible and hyperspace state
+        if player_invisible_dur != 0:
+            player_invisible_dur -= 1
+        elif hyperspace == 0:
+            player_state = "alive"
+        
+            
+
         # Hyperspace
         if hyperspace != 0:
             player_state = "dead"
             hyperspace -= 1
-            print("hyperspace")
             if hyperspace == 1:
-                player.x = random.randrange(0, display_width)
-                player.x = random.randrange(0, display_height)
+                player.x = random.randrange(0, DISPLAY_WIDTH)
+                player.x = random.randrange(0, DISPLAY_HEIGHT)
 
 
         ## UFO LOGIKK ##
         if ufo.state == "dead":
-            if ufo.spawn_time == 0 and player_state == "alive":
+            if ufo.spawn_time == 0:
                 if random.randrange(0,1000) == 0:
-                    ufo.create_ufo()
-                    print("ufo created")
+                    ufo.create_ufo(player.score)
             else:
                 ufo.spawn_time -= 1
         else:
@@ -678,14 +693,14 @@ def gameloop(startingState):
                 if collision(player.x, player.y, ufo.x, ufo.y, ufo.size):
                     ufo.state = "dead"
 
-                    player_score += ufo.get_ufo_score()
+                    player.score += ufo.get_ufo_score()
                     
                     player_pieces.append(DeadPlayer(player.x, player.y, 5 * player.size / (2 * math.cos(math.atan(1 / 3)))))
                     player_pieces.append(DeadPlayer(player.x, player.y, player.size))
                     player_pieces.append(DeadPlayer(player.x, player.y, player.size / 2))
                     player_state = "dead"
-                    player_spawn_dur  = 120
-                    player_death_timer = 30
+                    player_invisible_dur  = 120
+                    player_spawn_dur = 30
                     player_lives -= 1
                     player.resetPlayer()
             
@@ -717,8 +732,8 @@ def gameloop(startingState):
                     player_pieces.append(DeadPlayer(player.x, player.y, player.size))
                     player_pieces.append(DeadPlayer(player.x, player.y, player.size / 2))
                     player_state = "dead"
-                    player_spawn_dur  = 120
-                    player_death_timer = 30
+                    player_invisible_dur  = 120
+                    player_spawn_dur = 30
                     player_lives -= 1
                     player.resetPlayer()
                     break
@@ -746,10 +761,8 @@ def gameloop(startingState):
             for b in player_bullets:
                 if collision(b.x, b.y, ufo.x, ufo.y, ufo.size):
                     ufo.state = "dead"
-                    player_score += ufo.get_ufo_score()
+                    player.score += ufo.get_ufo_score()
                     
-                    
-
 
 
         ## ASTROIDE LOGIKK ##
@@ -759,8 +772,8 @@ def gameloop(startingState):
             if nextLvlDelay >= 0:
                 nextLvlDelay -= 1
             else:
-                dw = display_width
-                dh = display_height
+                dw = DISPLAY_WIDTH
+                dh = DISPLAY_HEIGHT
                 for x in range(stage+3):
                     xSpwn = dw / 2
                     ySpwn = dh / 2
@@ -780,8 +793,8 @@ def gameloop(startingState):
 
                     # Spiller dør
                     player_state = "dead"
-                    player_spawn_dur  = 120
-                    player_death_timer = 30
+                    player_invisible_dur  = 120
+                    player_spawn_dur = 30
                     player_lives -= 1
                     player.resetPlayer()
                 
@@ -790,30 +803,29 @@ def gameloop(startingState):
                     if collision(b.x, b.y, a.x, a.y, a.size):
                         player_bullets.remove(b)
                         if a.type == "large":
-                            player_score += 20
+                            player.score += 20
                             asteroides.append(Rocks(a.x, a.y, "medium"))
                             asteroides.append(Rocks(a.x, a.y, "medium"))
                         elif a.type == "medium":
-                            player_score += 50
+                            player.score += 50
                             asteroides.append(Rocks(a.x, a.y, "small"))
                             asteroides.append(Rocks(a.x, a.y, "small"))
                         else:
-                            player_score += 100
+                            player.score += 100
                         asteroides.remove(a)
                         
 
-            # Tegne spiller
+        
+        # Ekstra liv
+        if player.score > player.extra_lives_multiplier * 10000:
+            player_lives += 1
+            player.extra_lives_multiplier += 1
+        
+        # Tegne spiller
         if gameState != "gameOver":
-            
-            # sjekker om spiller spawner
-            if player_spawn_dur != 0:
-                player_spawn_dur -= 1
-            else:
-                player_state = "alive"
-
             if player_state == "dead":
                 if hyperspace == 0:
-                    if player_death_timer == 0:
+                    if player_spawn_dur == 0:
                         if player_blink < 5:
                             if player_blink == 0:
                                 player_blink = 10
@@ -821,30 +833,26 @@ def gameloop(startingState):
                                 player.drawPlayer()
                         player_blink -= 1
                     else:
-                        player_death_timer -= 1
+                        player_spawn_dur -= 1
             else:
                 player.drawPlayer()
-
 
 
         # Is game over
         if player_lives == 0:
             gameState = "gameOver"
             if gameOverDelay > 0:
-                drawText(x=300, y=400,size=40, msg="Game Over", color=white, orient="none")
+                drawText(x=DISPLAY_WIDTH/3, y=200,size=50, msg="Game Over", color=WHITE, orient="none")
                 gameOverDelay -= 1
-            else:
-                highScore.evaluateScore(player_score)
-                gameState = "exit"
                 
-
-
+            else:
+                highScore.evaluateScore(player.score)
+                gameState = "exit"
 
 
         pygame.display.flip()
         clock.tick(30)
-    
-    print("exit Game Loop")
+
     mainMenu()
 
 

@@ -594,7 +594,7 @@ def gameloop(startingState):
     asteroides = []
     player_pieces = []
     player_state = "alive"
-    player_lives = 1
+    player_lives = 3
     player_spawn_dur = 0
     player_invisible_dur = 0
     player_blink = 0

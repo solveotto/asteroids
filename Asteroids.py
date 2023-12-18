@@ -5,6 +5,7 @@ import random
 import json
 import pygame_textinput
 
+import gfx
 
 
 '''
@@ -199,7 +200,6 @@ class DeadPlayer():
             self.angle += self.rtsp
         
 
-
 class Bullet():
     def __init__(self, x, y, dir) -> None:
         self.x = x
@@ -221,7 +221,6 @@ class Bullet():
 
         # Warp-effekt:
         self.x, self.y = check_warp(self.x, self.y)
-
 
 
 class Rocks():
@@ -282,7 +281,6 @@ class Rocks():
                                               self.y + next_v[0] * math.sin(next_v[1] * math.pi / 180)))
         
 
-
 class Ufo():
     def __init__(self):
         self.x = 0
@@ -292,7 +290,7 @@ class Ufo():
         self.bullets = []
         self.bdir = 0 
         self.bdelay = 30
-        self.spawn_time = 200
+        self.spawn_time = 300
         self.state = "dead"
         self.type = "large"
         self.size = 20
@@ -590,11 +588,12 @@ def gameloop(startingState):
     gameState = startingState
     player = Player(DISPLAY_WIDTH // 2, DISPLAY_HEIGHT // 2)
     ufo = Ufo()
+    debris = gfx.ManageDebris()
     player_bullets = []
     asteroides = []
     player_pieces = []
     player_state = "alive"
-    player_lives = 1
+    player_lives = 3
     player_spawn_dur = 0
     player_invisible_dur = 0
     player_blink = 0
@@ -629,6 +628,8 @@ def gameloop(startingState):
                     SND_FIRE.play()
                 if event.key == pygame.K_LSHIFT and player_state == "alive":
                     hyperspace = 30
+                if event.key == pygame.K_y:
+                    debris.create_debris(400, 300, 10)
         
 
         SCREEN.fill((0, 0, 0))
@@ -675,7 +676,7 @@ def gameloop(startingState):
         ## UFO LOGIKK ##
         if ufo.state == "dead":
             if ufo.spawn_time == 0:
-                if random.randrange(0,1000) == 0:
+                if random.randrange(0,400) == 0:
                     ufo.create_ufo(player.score)
             else:
                 ufo.spawn_time -= 1
@@ -760,6 +761,7 @@ def gameloop(startingState):
             # Sjekke spillers kuler mot UFO
             for b in player_bullets:
                 if collision(b.x, b.y, ufo.x, ufo.y, ufo.size):
+                    debris.create_debris(ufo.x, ufo.y, 10)
                     ufo.state = "dead"
                     player.score += ufo.get_ufo_score()
                     
@@ -791,17 +793,20 @@ def gameloop(startingState):
                     player_pieces.append(DeadPlayer(player.x, player.y, player.size))
                     player_pieces.append(DeadPlayer(player.x, player.y, player.size / 2))
 
+                    debris.create_debris(player.x, player.y, 10)
+                    
                     # Spiller dør
                     player_state = "dead"
                     player_invisible_dur  = 120
                     player_spawn_dur = 30
                     player_lives -= 1
                     player.resetPlayer()
-                
+ 
                 # Sjekker om spillers kuler treffer astroide
                 for b in player_bullets:
                     if collision(b.x, b.y, a.x, a.y, a.size):
                         player_bullets.remove(b)
+                        debris.create_debris(a.x, a.y, 10)
                         if a.type == "large":
                             player.score += 20
                             asteroides.append(Rocks(a.x, a.y, "medium"))
@@ -814,7 +819,7 @@ def gameloop(startingState):
                             player.score += 100
                         asteroides.remove(a)
                         
-
+        
         
         # Ekstra liv
         if player.score > player.extra_lives_multiplier * 10000:
@@ -849,6 +854,7 @@ def gameloop(startingState):
                 highScore.evaluateScore(player.score)
                 gameState = "exit"
 
+        debris.update(SCREEN)
 
         pygame.display.flip()
         clock.tick(30)
@@ -857,10 +863,7 @@ def gameloop(startingState):
 
 
 
-if __name__ == "__main__":
-        
+if __name__ == "__main__":    
     mainMenu()
-
-
     pygame.quit()
     sys.exit()

@@ -32,8 +32,7 @@ DISPLAY_WIDTH  = 800
 DISPLAY_HEIGHT = 600
 SCREEN = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 
-# File paths
-SAVE_FILE_PATH = "highscore.json"
+
 
 # Fonts
 FONT_PATH = 'fonts/Hyperspace-JvEM.ttf' 
@@ -380,8 +379,8 @@ class Ufo():
 
 
 class HighScore():
-    def __init__(self, filepath):
-        self.filepath = filepath
+    def __init__(self):
+        self.filepath = "highscore.json"
         self.highScore = []
         self.sortedHighScore = []
         self.pName = ["_", "_", "_"]
@@ -475,7 +474,7 @@ class HighScore():
 
 # Global variables
 try:
-    highScore = HighScore(SAVE_FILE_PATH)
+    highScore = HighScore()
     highScore.loadHighScore()
     highScoreLoaded = True
     if highScoreLoaded:

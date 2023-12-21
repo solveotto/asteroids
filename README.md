@@ -1,13 +1,20 @@
 # Asteroids
 
-Dette er et forsøk på kloning av det klassiske 1979 spillet fra Atari. Jeg har benyttet meg grovt av andre versjoner som er lagt ut på GitHub, men prøvd å kode alt selv.
-Men spesielt med trigometrien i hvordan spiller, astroider og kuler bevger seg har jeg måtte brukes andres kode.
+This is my attemt to make a clone of the 1979 game Asteroids. 
+It's my first game in pygame and i've used several other projects 
+on Github as inspiration.
 
-Kontroller:
-Piltaster roterer skipet
-Space skyter
-Venstre shift er hyperscpace
+# Ship controls:
+Arrow left/right  : Rotate ship
+Space             : Fire
+Left shift        : Hyperspace
+
+# Installation
+1. Install Python 3
+2. Install Pip
+3. In the comandline type: pip install /r requirements
+4. In the comandline type: python3 asteroids.py
 
 
-Lyder er tatt fra:
+Sounds taken from:
 http://www.classicgaming.cc/classics/asteroids/sounds

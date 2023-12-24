@@ -10,6 +10,7 @@ import gfx
 
 '''
 TO DO's:
+- Fjerne pygame_textinput
 - Flytte flere spillervariabler i klassen
 - Gjøre om main loop til en klasse.
 '''

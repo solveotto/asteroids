@@ -37,34 +37,3 @@ class ManageDebris:
                         d.remove(dx)
 
 
-
-
-if __name__ == "__main__":
-    pygame.init()
-    screen = pygame.display.set_mode((800, 600))
-    clock = pygame.time.Clock()
-    debris = []
-
-    
-    debris = ManageDebris()
-
-
-    running = True
-    while running:
-        screen.fill((0, 0, 0))
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-
-                    debris.create_debris(400, 300, 10)
-
-
-        debris.update(screen)
-
-
-        pygame.display.flip()
-        clock.tick(30)
-
-    pygame.quit()

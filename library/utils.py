@@ -1,5 +1,8 @@
 import os
 import pygame
+import math
+
+from library import player
 
 pygame.init()
 
@@ -35,6 +38,8 @@ SND_BANG_LARGE = pygame.mixer.Sound(SOUND_PATH+"bangLarge.wav")
 
 CLOCK = pygame.time.Clock()
 SCREEN = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
+
+
 
 
 
@@ -78,3 +83,23 @@ def check_warp(input_x, input_y):
         x = 0
 
     return x, y 
+
+
+
+def killPlayer(p, debris):
+    p.player_pieces.append(player.DeadPlayer(p.x, p.y, 5 * p.size / (2 * math.cos(math.atan(1 / 3)))))
+    p.player_pieces.append(player.DeadPlayer(p.x, p.y, p.size))
+    p.player_pieces.append(player.DeadPlayer(p.x, p.y, p.size / 2))
+
+    debris.create_debris(p.x, p.y, 10)
+    
+    # Spiller dør
+    p.state = "dead"
+    p.invisible_dur  = 120
+    p.spawn_dur = 60
+    p.lives -= 1
+    p.resetPlayer()
+
+
+def splitAsteroied():
+    pass

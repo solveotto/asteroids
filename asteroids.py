@@ -83,7 +83,6 @@ def gameloop(startingState):
     while gameState != "exit":
 
         for event in pygame.event.get():
-            print(player_.player_pieces)
             if event.type == pygame.QUIT:
                 gameState = "exit"
                 
@@ -109,44 +108,9 @@ def gameloop(startingState):
         
 
         SCREEN.fill((0, 0, 0))
-        player_.updatePlayer()
-
-        # GFX           
-        # Current score
-        drawText(x=15,y=10,size=26, msg="Poeng: "+str(player_.score), color=WHITE, orient="none")
-        
-        # Current lives
-        for x in range(player_.lives):
-            player.Player((40+(x*20)),65).drawPlayer()
+ 
 
 
-        # PLAYER LOGIC
-        for fragmet in player_.player_pieces:
-            fragmet.update_dead_player()
-    
-
-        # Bullets
-        if len(player_.bullets) > 0:
-            for bullet in player_.bullets:
-                bullet.update_bullet()
-                if bullet.life == 0:
-                    player_.bullets.remove(bullet)
-
-        # Check ivinsible and hyperspace state
-        if player_.invisible_dur != 0:
-            player_.invisible_dur -= 1
-        elif player_.hyperspace == 0:
-            player_.state = "alive"
-        
-            
-
-        # Hyperspace
-        if player_.hyperspace != 0:
-            player_.state = "dead"
-            player_.hyperspace -= 1
-            if player_.hyperspace == 1:
-                player_.x = random.randrange(0, DISPLAY_WIDTH)
-                player_.x = random.randrange(0, DISPLAY_HEIGHT)
 
 
         ## UFO LOGIKK ##
@@ -172,14 +136,7 @@ def gameloop(startingState):
 
                     player_.score += ufo_.get_ufo_score()
                     
-                    player_.player_pieces.append(player.DeadPlayer(player_.x, player_.y, 5 * player_.size / (2 * math.cos(math.atan(1 / 3)))))
-                    player_.player_pieces.append(player.DeadPlayer(player_.x, player_.y, player_.size))
-                    player_.player_pieces.append(player.DeadPlayer(player_.x, player_.y, player_.size / 2))
-                    player_.state = "dead"
-                    player_.invisible_dur  = 120
-                    player_.spawn_dur = 30
-                    player_.lives -= 1
-                    player_.resetPlayer()
+                    killPlayer(player_, debris)
             
 
             # Sjekker om UFO kolliderer med astroider
@@ -204,15 +161,7 @@ def gameloop(startingState):
                 if collision(player_.x, player_.y, b.x, b.y, player_.size):
                     ufo_.bullets.remove(b)
                     ufo_.state = "dead"
-
-                    player_.player_pieces.append(player.DeadPlayer(player_.x, player_.y, 5 * player_.size / (2 * math.cos(math.atan(1 / 3)))))
-                    player_.player_pieces.append(player.DeadPlayer(player_.x, player_.y, player_.size))
-                    player_.player_pieces.append(player.DeadPlayer(player_.x, player_.y, player_.size / 2))
-                    player_.state = "dead"
-                    player_.invisible_dur  = 120
-                    player_.spawn_dur = 30
-                    player_.lives -= 1
-                    player_.resetPlayer()
+                    killPlayer(player_, debris)
                     break
 
                 # Sjekker om kuler treffer astroide
@@ -265,18 +214,7 @@ def gameloop(startingState):
             a.update_asteroide()
             if player_.state != "dead":
                 if collision(player_.x, player_.y, a.x, a.y, a.size):
-                    player_.player_pieces.append(player.DeadPlayer(player_.x, player_.y, 5 * player_.size / (2 * math.cos(math.atan(1 / 3)))))
-                    player_.player_pieces.append(player.DeadPlayer(player_.x, player_.y, player_.size))
-                    player_.player_pieces.append(player.DeadPlayer(player_.x, player_.y, player_.size / 2))
-
-                    debris.create_debris(player_.x, player_.y, 10)
-                    
-                    # Spiller dør
-                    player_.state = "dead"
-                    player_.invisible_dur  = 120
-                    player_.spawn_dur = 30
-                    player_.lives -= 1
-                    player_.resetPlayer()
+                    killPlayer(player_, debris)
  
                 # Sjekker om spillers kuler treffer astroide
                 for b in player_.bullets:
@@ -294,14 +232,60 @@ def gameloop(startingState):
                         else:
                             player_.score += 100
                         asteroides.remove(a)
-                        
         
+        player_.updatePlayer()
+        debris.update(SCREEN)
+
+
+        # GFX           
+        # Current score
+        drawText(x=15,y=10,size=26, msg="Poeng: "+str(player_.score), color=WHITE, orient="none")
+        
+
+        # Current lives
+        for x in range(player_.lives):
+            player.Player((40+(x*20)),65).drawPlayer()
+
+
+        # Fragments
+        for fragmet in player_.player_pieces:
+            fragmet.update_dead_player()
+            if fragmet.pieces_dur > 0:
+                fragmet.pieces_dur -= 1
+            else:
+                player_.player_pieces.remove(fragmet)
+        
+                
+        # Bullets
+        if len(player_.bullets) > 0:
+            for bullet in player_.bullets:
+                bullet.update_bullet()
+                if bullet.life == 0:
+                    player_.bullets.remove(bullet)
+
+
+        # Check ivinsible and hyperspace state
+        if player_.invisible_dur != 0:
+            player_.invisible_dur -= 1
+        elif player_.hyperspace == 0:
+            player_.state = "alive"
+        
+            
+        # Hyperspace
+        if player_.hyperspace != 0:
+            player_.state = "dead"
+            player_.hyperspace -= 1
+            if player_.hyperspace == 1:
+                player_.x = random.randrange(0, DISPLAY_WIDTH)
+                player_.x = random.randrange(0, DISPLAY_HEIGHT)
+
         
         # Ekstra liv
         if player_.score > player_.extra_lives_multiplier * 10000:
             player_.lives += 1
             player_.extra_lives_multiplier += 1
         
+
         # Tegne spiller
         if gameState != "gameOver":
             if player_.state == "dead":
@@ -330,19 +314,11 @@ def gameloop(startingState):
                 highScore.evaluateScore(player_.score)
                 gameState = "exit"
 
-        ### Arbiedi
-        # Remove player pieces
-        for pieces in player_.player_pieces:
-            if pieces.pieces_dur <= 0:
-                player_.player_pieces.remove(pieces)
-
-
-        debris.update(SCREEN)
+        
         pygame.display.flip()
         CLOCK.tick(30)
 
     mainMenu()
-
 
 
 if __name__ == "__main__":    

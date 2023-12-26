@@ -148,7 +148,7 @@ class DeadPlayer():
         self.rtsp = random.uniform(-0.25, 0.25)
         self.speed = random.randint(2,8)
         self.pieces = []
-        self.pieces_dur = 10
+        self.pieces_dur = 60
         
 
     def update_dead_player(self):

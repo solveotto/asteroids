@@ -1,5 +1,6 @@
 import json
 import pygame
+import pygame_textinput
 
 
 from library.utils import *

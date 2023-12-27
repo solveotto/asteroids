@@ -28,13 +28,17 @@ FONT_PATH = 'fonts/Hyperspace-JvEM.ttf'
 FONT_SIZE = 36 
 CUSTOM_FONT = pygame.font.Font(FONT_PATH, FONT_SIZE)
 
-# Sound
+# SOUNDS
 SOUND_PATH = os.path.join('.', 'sounds/')
 SND_CHANNEL_FIRE = pygame.mixer.Channel(0)
 SND_CHANNEL_UFO = pygame.mixer.Channel(1)
 SND_CHANNEL_THRUST = pygame.mixer.Channel(2)
 SND_CHANNEL_OTHER = pygame.mixer.Channel(3)
 
+# Volume
+SND_CHANNEL_UFO.set_volume(0.1)
+
+# SndFX
 SND_FIRE = pygame.mixer.Sound(SOUND_PATH+"fire.wav")
 SND_THRUST = pygame.mixer.Sound(SOUND_PATH+"thrust.wav")
 SND_UFO_SMALL = pygame.mixer.Sound(SOUND_PATH+"saucerSmall.wav")
@@ -45,12 +49,8 @@ SND_BANG_LARGE = pygame.mixer.Sound(SOUND_PATH+"bangLarge.wav")
 SND_EXTRA_SHIP = pygame.mixer.Sound(SOUND_PATH+"extraShip.wav")
 
 
-
 CLOCK = pygame.time.Clock()
 SCREEN = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
-
-
-
 
 
 def collision(x, y, x2, y2, size):
@@ -111,6 +111,3 @@ def killPlayer(plyr, debr):
     plyr.lives -= 1
     plyr.resetPlayer()
 
-
-def splitAsteroied():
-    pass

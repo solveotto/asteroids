@@ -1,3 +1,4 @@
 env/
 __pycache__/
 highscore.json
+library/highscore.json

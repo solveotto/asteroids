@@ -8,8 +8,6 @@ import pygame
 from library import player, debries, highscore, bullets, rocks, ufo
 from library.utils import *
 
-
-
 # Global variables
 highScore = highscore.HighScore()
    
@@ -37,8 +35,6 @@ def mainMenu():
         highScoreNumber = 1
         highScorePos = 10
 
-
-
         if highScore.highScoreLoaded:
             for item in highScore.highScore:
                 for name, score in item.items():
@@ -47,7 +43,6 @@ def mainMenu():
                     highScoreNumber += 1
         else:
             drawText(f"ERROR - NO DATA", DISPLAY_WIDTH/2, 320, 30, WHITE, orient="centered")
-
         
         # Astroide i bakgrunnen
         if len(asteroides) == 0:     
@@ -57,7 +52,6 @@ def mainMenu():
                 asteroides.append(rocks.Rocks(xSpwn, ySpwn, "large"))
         for a in asteroides:
             a.update_asteroide()
- 
         
         pygame.display.update()
         CLOCK.tick(30)
@@ -66,26 +60,22 @@ def mainMenu():
         gameloop("playing")
 
 
-
 def gameloop(startingState):
     # Initial variables
     gameState = startingState
     player_ = player.Player(DISPLAY_WIDTH // 2, DISPLAY_HEIGHT // 2)
     ufo_ = ufo.Ufo()
     debris = debries.ManageDebris()
-    asteroides = []
+    rocks_ = rocks.ManageRocks()
     stage = 1
     nextLvlDelay  = 30
     gameOverDelay = 120
 
-
     # Main loop
     while gameState != "exit":
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 gameState = "exit"
-                
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     player_.thrust = True
@@ -103,20 +93,16 @@ def gameloop(startingState):
                     SND_FIRE.play()
                 if event.key == pygame.K_LSHIFT and player_.state == "alive":
                     player_.hyperspace = 30
-                if event.key == pygame.K_y:
-                    debris.create_debris(400, 300, 10)
-        
 
         SCREEN.fill((0, 0, 0))
- 
 
-
-
+        player_.updatePlayer()   
 
         ## UFO LOGIKK ##
         if ufo_.state == "dead":
             if ufo_.spawn_time == 0:
                 if random.randrange(0,400) == 0:
+                    '''Ufo spawn rate'''
                     ufo_.create_ufo(player_.score)
             else:
                 ufo_.spawn_time -= 1
@@ -126,126 +112,88 @@ def gameloop(startingState):
             ufo_.bdir = math.degrees(math.atan2(-ufo_.y + player_.y, -ufo_.x + player_.x) + 
                                     math.radians(random.uniform(acc, -acc)))
 
-            ufo_.update_ufo()
-            ufo_.draw_ufo()
-            
             # Sjekk UFOs kollisjon med spiller
             if player_.state != "dead":
                 if collision(player_.x, player_.y, ufo_.x, ufo_.y, ufo_.size):
                     ufo_.state = "dead"
-
                     player_.score += ufo_.get_ufo_score()
-                    
                     killPlayer(player_, debris)
-            
 
             # Sjekker om UFO kolliderer med astroider
-            for a in asteroides:
+            for a in rocks_.asteroids:
                 if collision(a.x, a.y, ufo_.x, ufo_.y, a.size):
                     ufo_.state = "dead"
-                    if a.type == "large":
-                        asteroides.append(rocks.Rocks(a.x,a.y, "medium"))
-                        asteroides.append(rocks.Rocks(a.x,a.y, "medium"))
-                    elif a.type == "medium":
-                        asteroides.append(rocks.Rocks(a.x,a.y, "small"))
-                        asteroides.append(rocks.Rocks(a.x,a.y, "small"))
+                    rocks_.split_asteroid(a)
+                    rocks_.asteroids.remove(a)
 
-                    asteroides.remove(a)
-
-            
-            # UFO kuler
+            # UFO bullets
             for b in ufo_.bullets:
                 b.update_bullet()
 
-                # Sjekker om kule treffer spiller
+                # UFO bullets collision with player
                 if collision(player_.x, player_.y, b.x, b.y, player_.size):
                     ufo_.bullets.remove(b)
                     ufo_.state = "dead"
                     killPlayer(player_, debris)
                     break
 
-                # Sjekker om kuler treffer astroide
-                for a in asteroides:
+                # UFO bullets collision with asteroids
+                for a in rocks_.asteroids:
                     if collision(b.x, b.y, a.x, a.y, a.size):
-                        asteroides.remove(a)
+                        rocks_.asteroids.remove(a)
                         ufo_.bullets.remove(b)
-                        if a.type == "large":
-                            asteroides.append(rocks.Rocks(a.x,a.y, "medium"))
-                            asteroides.append(rocks.Rocks(a.x,a.y, "medium"))
-                        elif a.type == "medium":
-                            asteroides.append(rocks.Rocks(a.x,a.y, "small"))
-                            asteroides.append(rocks.Rocks(a.x,a.y, "small"))   
+                        rocks_.split_asteroid(a)  
                         break                   
                         
-
-                # Fjerner kule etter gitt tid    
+                # Remove bullets afer a interval
                 if b.life <= 0 and b in ufo_.bullets:
                     ufo_.bullets.remove(b)
                         
-
-            # Sjekke spillers kuler mot UFO
+            # Player bullets collision with UFO
             for b in player_.bullets:
                 if collision(b.x, b.y, ufo_.x, ufo_.y, ufo_.size):
                     debris.create_debris(ufo_.x, ufo_.y, 10)
                     ufo_.state = "dead"
                     player_.score += ufo_.get_ufo_score()
-                    
+            
+            ufo_.update_ufo()
+            ufo_.draw_ufo()    
 
 
-        ## ASTROIDE LOGIKK ##
-
-        # Genererer Asteroider vekk fra senter
-        if len(asteroides) == 0 and player_.state == "alive":
+        ## ASTROIDE LOGIC ##
+        # Spawns Asteroids away from center of screen if none are present
+        if len(rocks_.asteroids) == 0 and player_.state == "alive":
             if nextLvlDelay >= 0:
                 nextLvlDelay -= 1
             else:
-                dw = DISPLAY_WIDTH
-                dh = DISPLAY_HEIGHT
-                for x in range(stage+3):
-                    xSpwn = dw / 2
-                    ySpwn = dh / 2
-                    while xSpwn - dw / 2 < dw / 4 and ySpwn - dh / 2 < dh /4:
-                        xSpwn = random.randrange(0, dw)
-                        ySpwn = random.randrange(0, dh)
-                    asteroides.append(rocks.Rocks(xSpwn, ySpwn, "large"))
-                nextLvlDelay = 30
+                rocks_.spawn_asteroids(stage, player_)
 
-        for a in asteroides:
+        for a in rocks_.asteroids:
             a.update_asteroide()
             if player_.state != "dead":
                 if collision(player_.x, player_.y, a.x, a.y, a.size):
                     killPlayer(player_, debris)
  
-                # Sjekker om spillers kuler treffer astroide
+                # Player bullets collision with asteroids
                 for b in player_.bullets:
                     if collision(b.x, b.y, a.x, a.y, a.size):
                         player_.bullets.remove(b)
                         debris.create_debris(a.x, a.y, 10)
+                        rocks_.split_asteroid(a)
                         if a.type == "large":
                             player_.score += 20
-                            asteroides.append(rocks.Rocks(a.x, a.y, "medium"))
-                            asteroides.append(rocks.Rocks(a.x, a.y, "medium"))
                         elif a.type == "medium":
                             player_.score += 50
-                            asteroides.append(rocks.Rocks(a.x, a.y, "small"))
-                            asteroides.append(rocks.Rocks(a.x, a.y, "small"))
                         else:
                             player_.score += 100
-                        asteroides.remove(a)
-        
-        player_.updatePlayer()
-        debris.update(SCREEN)
+                        rocks_.asteroids.remove(a)
 
-
-        # GFX           
-        # Current score
+        # Displays current score
         drawText(x=15,y=10,size=26, msg="Poeng: "+str(player_.score), color=WHITE, orient="none")
         
-
         # Current lives
         for x in range(player_.lives):
             player.Player((40+(x*20)),65).drawPlayer()
-
 
         # Fragments
         for fragmet in player_.player_pieces:
@@ -254,8 +202,7 @@ def gameloop(startingState):
                 fragmet.pieces_dur -= 1
             else:
                 player_.player_pieces.remove(fragmet)
-        
-                
+                      
         # Bullets
         if len(player_.bullets) > 0:
             for bullet in player_.bullets:
@@ -263,13 +210,11 @@ def gameloop(startingState):
                 if bullet.life == 0:
                     player_.bullets.remove(bullet)
 
-
         # Check ivinsible and hyperspace state
         if player_.invisible_dur != 0:
             player_.invisible_dur -= 1
         elif player_.hyperspace == 0:
-            player_.state = "alive"
-        
+            player_.state = "alive"    
             
         # Hyperspace
         if player_.hyperspace != 0:
@@ -278,17 +223,17 @@ def gameloop(startingState):
             if player_.hyperspace == 1:
                 player_.x = random.randrange(0, DISPLAY_WIDTH)
                 player_.x = random.randrange(0, DISPLAY_HEIGHT)
-
-        
-        # Ekstra liv
+    
+        # Gives extra lives every 10 000 points
         if player_.score > player_.extra_lives_multiplier * 10000:
             player_.lives += 1
             player_.extra_lives_multiplier += 1
-        
-
-        # Tegne spiller
+    
+        # Draws player
         if gameState != "gameOver":
             if player_.state == "dead":
+                
+                debris.update(SCREEN)
                 if player_.hyperspace == 0:
                     if player_.spawn_dur == 0:
                         if player_.blink < 5:
@@ -300,8 +245,8 @@ def gameloop(startingState):
                     else:
                         player_.spawn_dur -= 1
             else:
+                
                 player_.drawPlayer()
-
 
         # Is game over
         if player_.lives <= 0:
@@ -314,7 +259,7 @@ def gameloop(startingState):
                 highScore.evaluateScore(player_.score)
                 gameState = "exit"
 
-        
+
         pygame.display.flip()
         CLOCK.tick(30)
 

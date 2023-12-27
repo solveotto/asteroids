@@ -1,13 +1,26 @@
+import sys
 import json
 import pygame
 import pygame_textinput
 
-
 from library.utils import *
 
-
 class HighScore():
+    """
+    A class representing the high score functionality of the game.
+    """
+
     def __init__(self):
+        """
+        Initializes the HighScore object.
+
+        Attributes:
+        - filepath: The filepath of the high score JSON file.
+        - highScore: A list containing the high scores.
+        - sortedHighScore: A sorted version of the high scores.
+        - pName: A list containing the player's initials.
+        - highScoreLoaded: A boolean indicating whether the high scores were successfully loaded.
+        """
         self.filepath = "library/highscore.json"
         self.highScore = []
         self.sortedHighScore = []
@@ -23,21 +36,33 @@ class HighScore():
             self.sortHighScore()
         
     def loadHighScore(self):
+        """
+        Loads the high scores from the JSON file.
+        """
         with open(self.filepath, 'r') as file:
             data = json.load(file)
         self.highScore = data
 
     def saveHighScore(self):
+        """
+        Saves the high scores to the JSON file.
+        """
         with open(self.filepath, 'w') as file:
             json.dump(self.highScore, file, indent=4)
     
     def sortHighScore(self):
+        """
+        Sorts the high scores in descending order based on the score.
+        """
         try:
             self.highScore = sorted(self.highScore, key=lambda x: list(x.values())[0], reverse=True)
         except IndexError:
             pass
 
     def getName(self):
+        """
+        Get's the player's initials for the high score entry.
+        """
         manager = pygame_textinput.TextInputManager(validator=lambda input: len(input) <= 3)
         textInput = pygame_textinput.TextInputVisualizer(manager=manager)
 
@@ -77,9 +102,13 @@ class HighScore():
         if self.pName == ["_", "_", "_"]:
             self.pName = [" "," "," "]
 
-
-    # Sjekker om poengsummen er en highscore
     def evaluateScore(self, pScore):
+        """
+        Evaluates if the player's score is a high score and updates the high score list accordingly.
+
+        Parameters:
+        - pScore: The player's score to be evaluated.
+        """
         break_flag = False
 
         if len(self.highScore) > 0:

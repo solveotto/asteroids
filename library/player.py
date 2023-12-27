@@ -6,11 +6,30 @@ from library.utils import *
 #SCREEN = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 
 
+
 class Player():
-    '''Creates an controls the player.
-    
-    Has a function for creating the player en a function for drawing the player
-    '''
+    """
+    Represents a player object in the game.
+
+    Attributes:
+    - x (int): The x-coordinate of the player's position.
+    - y (int): The y-coordinate of the player's position.
+    - size (int): The size of the player object.
+    - hspeed (float): The horizontal speed of the player.
+    - vspeed (float): The vertical speed of the player.
+    - rtspeed (float): The rotation speed of the player.
+    - dir (float): The direction of the player in degrees.
+    - thrust (bool): Indicates whether the player is thrusting or not.
+    - bullets (list): A list of bullets fired by the player.
+    - player_pieces (list): A list of player pieces (used for collision detection).
+    - extra_lives_multiplier (int): A multiplier for earning extra lives.
+    - blink (int): The blink counter for the player's visibility.
+    - invisible_dur (int): The duration of the player's invisibility.
+    - spawn_dur (int): The duration of the player's spawn protection.
+    - state (str): The state of the player (e.g., "alive", "dead").
+    - hyperspace (int): The counter for the hyperspace effect.
+    """
+        
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -62,10 +81,8 @@ class Player():
                 self.hspeed = 0
                 self.vspeed = 0
 
-        
         # Warp-effekt:
         self.x, self.y = check_warp(self.x, self.y)
-
         
         # Oppdaterer posisjon og rotasjon
         self.x += self.hspeed
@@ -80,8 +97,7 @@ class Player():
         x = self.x
         y = self.y
 
-        # Tegner romskipet:
-        # Venstre strek.
+        # Left line
         pygame.draw.line(SCREEN, WHITE,
                          # Øverste punktet på streken.
                          # Forklaring: x/y-koordinat * størrelse * vinkelen. 
@@ -109,26 +125,28 @@ class Player():
                          (x - (size * math.sqrt(2) / 2) * math.cos(math.pi / 4 + -angle),
                           y + (size * math.sqrt(2) / 2) * math.sin(math.pi / 4 + -angle)))
         
-        # Hvis det blir gitt thrust, så tegnes det en stikkflamme.
+
+        # If there is thrust a yellow flame is created
         if self.thrust:
-            # Venstre strek
+            # Left line
             pygame.draw.line(SCREEN, YELLOW,     
-                             # Startpunkt (X, Y)
+                             # Starting point
                              (x - size * math.cos(angle), y - size * math.sin(angle)),
-                             # Sluttpunkt (X, Y)
+                             # End point
                              (x - (size * math.sqrt(5) / 4) * math.cos(angle + math.pi / 6),
                               y - (size * math.sqrt(5) / 4) * math.sin(angle + math.pi / 6)))
             
             # Høyre strek
             pygame.draw.line(SCREEN, YELLOW,
-                             # Startpunkt (X, Y)
+                             # Starting point
                              (x - size * math.cos(angle), y + size * math.sin(-angle)),
-                             # Sluttpunkt (X, Y)
+                             # End point
                              (x - (size * math.sqrt(5) / 4) * math.cos(-angle + math.pi / 6),
                               y + (size * math.sqrt(5) / 4) * math.sin(-angle + math.pi / 6)))
                
 
     def resetPlayer(self):
+        '''Resets the player's attributes to their initial values'''
         self.x = DISPLAY_WIDTH // 2
         self.y = DISPLAY_HEIGHT // 2
         self.hspeed = 0
@@ -139,6 +157,7 @@ class Player():
          
             
 class DeadPlayer():
+    '''Creates the effect when the player dies'''
     def __init__(self, x, y, l):
         self.x = x
         self.y = y
@@ -148,20 +167,21 @@ class DeadPlayer():
         self.rtsp = random.uniform(-0.25, 0.25)
         self.speed = random.randint(2,8)
         self.pieces = []
-        self.pieces_dur = 60
+        self.pieces_dur = 50
         
 
     def update_dead_player(self):
+        '''Updates the position of the dead player'''
+
+        self.x += self.speed * math.cos(self.dir)
+        self.y += self.speed * math.sin(self.dir)
+        self.angle += self.rtsp
+        
         pygame.draw.line(SCREEN, WHITE, 
                             (self.x + self.length * math.cos(self.angle) / 2,
                             self.y + self.length * math.sin(self.angle) / 2),
                             (self.x - self.length * math.cos(self.angle) / 2,
                             self.y - self.length * math.sin(self.angle) / 2))
         
-        self.x += self.speed * math.cos(self.dir)
-        self.y += self.speed * math.sin(self.dir)
-        self.angle += self.rtsp
 
-        if self.pieces_dur > 10:
-            self.pieces_dur -= 1
-        
+

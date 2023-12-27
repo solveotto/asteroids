@@ -61,3 +61,33 @@ class Rocks():
                                              (self.x + next_v[0] * math.cos(next_v[1] * math.pi / 180),
                                               self.y + next_v[0] * math.sin(next_v[1] * math.pi / 180)))
         
+class ManageRocks():
+    def __init__(self):
+        self.asteroids = []
+
+
+
+    def spawn_asteroids(self, stage, player_):
+        '''Spawns asteroids away from center of screen'''
+        
+        dw = DISPLAY_WIDTH
+        dh = DISPLAY_HEIGHT
+        for x in range(stage+3):
+            xSpwn = dw / 2
+            ySpwn = dh / 2
+            while xSpwn - dw / 2 < dw / 4 and ySpwn - dh / 2 < dh /4:
+                xSpwn = random.randrange(0, dw)
+                ySpwn = random.randrange(0, dh)
+            self.asteroids.append(Rocks(xSpwn, ySpwn, "large"))
+        nextLvlDelay = 30
+    
+    def split_asteroid(self, ast):
+        '''Splits asteroids into smaller ones'''
+        if ast.type == "large":
+            self.asteroids.append(Rocks(ast.x, ast.y, "medium"))
+            self.asteroids.append(Rocks(ast.x, ast.y, "medium"))
+        elif ast.type == "medium":
+            self.asteroids.append(Rocks(ast.x, ast.y, "small"))
+            self.asteroids.append(Rocks(ast.x, ast.y, "small"))
+        elif ast.type == "small":
+            pass

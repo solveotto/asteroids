@@ -7,6 +7,9 @@ from library.utils import *
 
 class Ufo():
     def __init__(self):
+        """
+        Initialize the UFO object with default attributes.
+        """
         self.x = 0
         self.y = 0
         self.dir = 0
@@ -23,6 +26,12 @@ class Ufo():
         
         
     def create_ufo(self, player_score):
+        """
+        Create a UFO with random attributes based on the player's score.
+
+        Parameters:
+        - player_score (int): The score of the player.
+        """
         self.state = "alive"
         self.spawn_time = 120
 
@@ -56,6 +65,9 @@ class Ufo():
 
 
     def update_ufo(self):
+        """
+        Update the position and behavior of the UFO.
+        """
         self.x += self.speed * math.cos(self.dir)
         self.y += self.speed * math.sin(self.dir)
         
@@ -83,6 +95,12 @@ class Ufo():
             self.bdelay -= 1
 
     def get_ufo_score(self):
+        """
+        Get the score value of the UFO based on its type.
+
+        Returns:
+        int: The score value of the UFO.
+        """
         if self.type == "large":
             return 200
         else:
@@ -91,6 +109,9 @@ class Ufo():
             
         
     def draw_ufo(self):
+        """
+        Draw the UFO on the screen.
+        """
         pygame.draw.polygon(SCREEN, WHITE, [(self.x+self.size,self.y), 
                                             (self.x+self.size/2 ,self.y+self.size/3),
                                             (self.x-self.size/2, self.y+self.size/3),

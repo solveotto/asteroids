@@ -70,7 +70,8 @@ class Ufo():
         """
         self.x += self.speed * math.cos(self.dir)
         self.y += self.speed * math.sin(self.dir)
-        
+
+
 
         # Ufo kan endre retning tilfeldig
         if random.randrange(1,100) == 1:

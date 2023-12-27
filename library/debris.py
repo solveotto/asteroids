@@ -1,5 +1,6 @@
 import pygame
 import random
+import time
 
 class Debris:
     def __init__(self, x, y, dx, dy, life):
@@ -41,9 +42,6 @@ class ManageDebris:
     def __init__(self):
         """
         Initialize a ManageDebris object.
-
-        Returns:
-            None
         """
         self.debris = []
 
@@ -55,11 +53,9 @@ class ManageDebris:
             x (float): The x-coordinate of the debris.
             y (float): The y-coordinate of the debris.
             num_debris (int): The number of debris objects to create.
-
-        Returns:
-            None
         """
-        self.debris.append([Debris(x, y, random.uniform(-1, 1), random.uniform(-1, 1), random.randint(10, 20)) for _ in range(num_debris)])
+        for _ in range(num_debris):
+            self.debris.append(Debris(x, y, random.uniform(-1, 1), random.uniform(-1, 1), random.randint(10, 20)))
 
     def update(self, screen):
         """
@@ -67,16 +63,13 @@ class ManageDebris:
 
         Args:
             screen (pygame.Surface): The surface to draw the debris on.
-
-        Returns:
-            None
         """
+        
         if len(self.debris) > 0:
             for d in self.debris:
-                for dx in d:
-                    dx.update()
-                    dx.draw(screen)
-                    if dx.life <= 0:
-                        d.remove(dx)
+                d.update()
+                d.draw(screen)
+                if d.life <= 0:
+                    self.debris.remove(d)
 
 

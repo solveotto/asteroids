@@ -5,7 +5,7 @@ import random
 import pygame
 
 # Local modules
-from library import player, debries, highscore, bullets, rocks, ufo
+from library import debris, player, highscore, bullets, rocks, ufo
 from library.utils import *
 
 # Global variables
@@ -65,7 +65,7 @@ def gameloop(startingState):
     gameState = startingState
     player_ = player.Player(DISPLAY_WIDTH // 2, DISPLAY_HEIGHT // 2)
     ufo_ = ufo.Ufo()
-    debris = debries.ManageDebris()
+    debris_ = debris.ManageDebris()
     rocks_ = rocks.ManageRocks()
     stage = 1
     nextLvlDelay  = 30
@@ -79,6 +79,7 @@ def gameloop(startingState):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     player_.thrust = True
+                    
                 if event.key == pygame.K_LEFT:
                     player_.rtspeed = -PLAYER_MAX_RTSPEED
                 if event.key == pygame.K_RIGHT:
@@ -90,18 +91,19 @@ def gameloop(startingState):
                     player_.rtspeed = 0
                 if event.key == pygame.K_SPACE and player_.state == "alive":
                     player_.bullets.append(bullets.Bullet(player_.x, player_.y, player_.dir))
-                    SND_FIRE.play()
+                    SND_CHANNEL_FIRE.play(SND_FIRE)
                 if event.key == pygame.K_LSHIFT and player_.state == "alive":
                     player_.hyperspace = 30
 
         SCREEN.fill((0, 0, 0))
 
-        player_.updatePlayer()   
+        player_.updatePlayer()
+        
 
         ## UFO LOGIKK ##
         if ufo_.state == "dead":
             if ufo_.spawn_time == 0:
-                if random.randrange(0,400) == 0:
+                if random.randrange(0,300) == 0:
                     '''Ufo spawn rate'''
                     ufo_.create_ufo(player_.score)
             else:
@@ -111,13 +113,22 @@ def gameloop(startingState):
             acc = ufo_.small_ufo_acc * 4 / stage
             ufo_.bdir = math.degrees(math.atan2(-ufo_.y + player_.y, -ufo_.x + player_.x) + 
                                     math.radians(random.uniform(acc, -acc)))
+            
+            if ufo_.type == "small":
+                # Only play the sound if the channel is not busy
+                if not SND_CHANNEL_UFO.get_busy():
+                    SND_CHANNEL_UFO.play(SND_UFO_SMALL)
+            else:
+                # Only play the sound if the channel is not busy
+                if not SND_CHANNEL_UFO.get_busy():
+                    SND_CHANNEL_UFO.play(SND_UFO_LARGE)
 
             # Sjekk UFOs kollisjon med spiller
             if player_.state != "dead":
                 if collision(player_.x, player_.y, ufo_.x, ufo_.y, ufo_.size):
                     ufo_.state = "dead"
                     player_.score += ufo_.get_ufo_score()
-                    killPlayer(player_, debris)
+                    killPlayer(player_, debris_)
 
             # Sjekker om UFO kolliderer med astroider
             for a in rocks_.asteroids:
@@ -134,7 +145,7 @@ def gameloop(startingState):
                 if collision(player_.x, player_.y, b.x, b.y, player_.size):
                     ufo_.bullets.remove(b)
                     ufo_.state = "dead"
-                    killPlayer(player_, debris)
+                    killPlayer(player_, debris_)
                     break
 
                 # UFO bullets collision with asteroids
@@ -152,7 +163,7 @@ def gameloop(startingState):
             # Player bullets collision with UFO
             for b in player_.bullets:
                 if collision(b.x, b.y, ufo_.x, ufo_.y, ufo_.size):
-                    debris.create_debris(ufo_.x, ufo_.y, 10)
+                    debris_.create_debris(ufo_.x, ufo_.y, 10)
                     ufo_.state = "dead"
                     player_.score += ufo_.get_ufo_score()
             
@@ -172,13 +183,13 @@ def gameloop(startingState):
             a.update_asteroide()
             if player_.state != "dead":
                 if collision(player_.x, player_.y, a.x, a.y, a.size):
-                    killPlayer(player_, debris)
+                    killPlayer(player_, debris_)
  
                 # Player bullets collision with asteroids
                 for b in player_.bullets:
                     if collision(b.x, b.y, a.x, a.y, a.size):
                         player_.bullets.remove(b)
-                        debris.create_debris(a.x, a.y, 10)
+                        debris_.create_debris(a.x, a.y, 10)
                         rocks_.split_asteroid(a)
                         if a.type == "large":
                             player_.score += 20
@@ -228,12 +239,11 @@ def gameloop(startingState):
         if player_.score > player_.extra_lives_multiplier * 10000:
             player_.lives += 1
             player_.extra_lives_multiplier += 1
+            SND_CHANNEL_OTHER.play(SND_EXTRA_SHIP)
     
         # Draws player
         if gameState != "gameOver":
-            if player_.state == "dead":
-                
-                debris.update(SCREEN)
+            if player_.state == "dead":   
                 if player_.hyperspace == 0:
                     if player_.spawn_dur == 0:
                         if player_.blink < 5:
@@ -247,6 +257,9 @@ def gameloop(startingState):
             else:
                 
                 player_.drawPlayer()
+            
+        # Updates debris if there are any
+        debris_.update(SCREEN)
 
         # Is game over
         if player_.lives <= 0:
@@ -258,7 +271,6 @@ def gameloop(startingState):
             else:
                 highScore.evaluateScore(player_.score)
                 gameState = "exit"
-
 
         pygame.display.flip()
         CLOCK.tick(30)

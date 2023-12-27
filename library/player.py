@@ -63,6 +63,9 @@ class Player():
                 # BUG: Styringen endrer seg når skipet kommer i topphastiget.
                 self.hspeed = PLAYER_MAX_SPEED * math.cos(self.dir * math.pi / 180)
                 self.vspeed = PLAYER_MAX_SPEED * math.sin(self.dir * math.pi / 180)
+            if not SND_CHANNEL_THRUST.get_busy():
+                SND_CHANNEL_THRUST.play(SND_THRUST)
+        
         else:
             if speed - BD_FRIC > 0:
                 chg_hspeed = (BD_FRIC * math.cos(self.vspeed / self.hspeed))

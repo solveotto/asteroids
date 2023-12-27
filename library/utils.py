@@ -30,9 +30,19 @@ CUSTOM_FONT = pygame.font.Font(FONT_PATH, FONT_SIZE)
 
 # Sound
 SOUND_PATH = os.path.join('.', 'sounds/')
+SND_CHANNEL_FIRE = pygame.mixer.Channel(0)
+SND_CHANNEL_UFO = pygame.mixer.Channel(1)
+SND_CHANNEL_THRUST = pygame.mixer.Channel(2)
+SND_CHANNEL_OTHER = pygame.mixer.Channel(3)
+
 SND_FIRE = pygame.mixer.Sound(SOUND_PATH+"fire.wav")
 SND_THRUST = pygame.mixer.Sound(SOUND_PATH+"thrust.wav")
-SND_BANG_LARGE = pygame.mixer.Sound(SOUND_PATH+"bangLarge.wav") 
+SND_UFO_SMALL = pygame.mixer.Sound(SOUND_PATH+"saucerSmall.wav")
+SND_UFO_LARGE = pygame.mixer.Sound(SOUND_PATH+"saucerBig.wav")
+SND_BANG_SMALL = pygame.mixer.Sound(SOUND_PATH+"bangSmall.wav")
+SND_BANG_MEDIUM = pygame.mixer.Sound(SOUND_PATH+"bangMedium.wav")
+SND_BANG_LARGE = pygame.mixer.Sound(SOUND_PATH+"bangLarge.wav")
+SND_EXTRA_SHIP = pygame.mixer.Sound(SOUND_PATH+"extraShip.wav")
 
 
 
@@ -86,19 +96,20 @@ def check_warp(input_x, input_y):
 
 
 
-def killPlayer(p, debris):
-    p.player_pieces.append(player.DeadPlayer(p.x, p.y, 5 * p.size / (2 * math.cos(math.atan(1 / 3)))))
-    p.player_pieces.append(player.DeadPlayer(p.x, p.y, p.size))
-    p.player_pieces.append(player.DeadPlayer(p.x, p.y, p.size / 2))
+def killPlayer(plyr, debr):
+    plyr.player_pieces.append(player.DeadPlayer(plyr.x, plyr.y, 5 * plyr.size / (2 * math.cos(math.atan(1 / 3)))))
+    plyr.player_pieces.append(player.DeadPlayer(plyr.x, plyr.y, plyr.size))
+    plyr.player_pieces.append(player.DeadPlayer(plyr.x, plyr.y, plyr.size / 2))
 
-    debris.create_debris(p.x, p.y, 10)
-    
+    debr.create_debris(plyr.x, plyr.y, 10)
+    SND_CHANNEL_OTHER.play(SND_BANG_LARGE)
+
     # Spiller dør
-    p.state = "dead"
-    p.invisible_dur  = 120
-    p.spawn_dur = 60
-    p.lives -= 1
-    p.resetPlayer()
+    plyr.state = "dead"
+    plyr.invisible_dur  = 120
+    plyr.spawn_dur = 60
+    plyr.lives -= 1
+    plyr.resetPlayer()
 
 
 def splitAsteroied():

@@ -86,8 +86,10 @@ class ManageRocks():
         if ast.type == "large":
             self.asteroids.append(Rocks(ast.x, ast.y, "medium"))
             self.asteroids.append(Rocks(ast.x, ast.y, "medium"))
+            SND_CHANNEL_OTHER.play(SND_BANG_LARGE)
         elif ast.type == "medium":
             self.asteroids.append(Rocks(ast.x, ast.y, "small"))
             self.asteroids.append(Rocks(ast.x, ast.y, "small"))
+            SND_CHANNEL_OTHER.play(SND_BANG_MEDIUM)
         elif ast.type == "small":
-            pass
+            SND_CHANNEL_OTHER.play(SND_BANG_SMALL)

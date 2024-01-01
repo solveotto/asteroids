@@ -25,23 +25,25 @@ class HighScore():
         self.highScore = []
         self.sortedHighScore = []
         self.pName = ["_", "_", "_"]
+        self.data = []
 
-        try:
-            self.loadHighScore()
-            self.highScoreLoaded = True
-        except FileNotFoundError:
-            self.highScoreLoaded = False
-        
-        if self.highScoreLoaded:
-            self.sortHighScore()
+        self.loadHighScore()
         
     def loadHighScore(self):
         """
         Loads the high scores from the JSON file.
         """
-        with open(self.filepath, 'r') as file:
-            data = json.load(file)
-        self.highScore = data
+        try:
+            with open(self.filepath, 'r') as file:
+                self.data = json.load(file)
+            self.highScoreLoaded = True
+        except FileNotFoundError:
+            self.highScoreLoaded = False
+        
+        self.highScore = self.data
+
+        if self.highScoreLoaded:
+            self.sortHighScore()
 
     def saveHighScore(self):
         """

@@ -27,6 +27,8 @@ def mainMenu():
                 asteroides = []
                 menuChoice = "play"
 
+        highScore.loadHighScore()
+
         SCREEN.fill(BLACK)
         drawText("Asteroides", DISPLAY_WIDTH/2, 100, 100, WHITE)
         drawText(f"Highscores", DISPLAY_WIDTH/2, 200, 34, WHITE)

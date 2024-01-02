@@ -6,6 +6,7 @@ on Github as inspiration. I hope you enjoy it.
 
 
 ### Ship controls:
+* Arrow forward     : Thrust
 * Arrow left/right  : Rotate ship
 * Space             : Fire
 * Left shift        : Hyperspace

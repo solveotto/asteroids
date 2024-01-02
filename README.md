@@ -22,7 +22,7 @@ on Github as inspiration. I hope you enjoy it.
 <p align="center">
   <img src="images/Capture1.PNG" width="300" title="hover text">
   <img src="images/Capture2.PNG" width="300"  alt="accessibility text">
-  <img src="imaees/Capture3.PNG" width="300" alt="accessibility text">
+  <img src="images/Capture3.PNG" width="300" alt="accessibility text">
 </p>
 <br>
 

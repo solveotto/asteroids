@@ -105,7 +105,7 @@ def gameloop(startingState):
         ## UFO LOGIKK ##
         if ufo_.state == "dead":
             if ufo_.spawn_time == 0:
-                if random.randrange(0,30) == 0:
+                if random.randrange(0,300) == 0:
                     '''Ufo spawn rate'''
                     ufo_.create_ufo(player_.score)
             else:

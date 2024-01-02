@@ -20,9 +20,9 @@ on Github as inspiration. I hope you enjoy it.
 <br>
 <hr>
 <p align="center">
-  <img src="screenshots/Capture1.PNG" width="300" title="hover text">
-  <img src="screenshots/Capture2.PNG" width="300"  alt="accessibility text">
-  <img src="screenshots/Capture3.PNG" width="300" alt="accessibility text">
+  <img src="images/Capture1.PNG" width="300" title="hover text">
+  <img src="images/Capture2.PNG" width="300"  alt="accessibility text">
+  <img src="imaees/Capture3.PNG" width="300" alt="accessibility text">
 </p>
 <br>
 

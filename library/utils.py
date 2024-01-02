@@ -50,6 +50,10 @@ SND_EXTRA_SHIP = pygame.mixer.Sound(SOUND_PATH+"extraShip.wav")
 
 
 CLOCK = pygame.time.Clock()
+
+ICON = pygame.image.load('images/icon.png')
+pygame.display.set_caption("Asteroids")
+pygame.display.set_icon(ICON)
 SCREEN = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 
 

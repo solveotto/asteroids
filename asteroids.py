@@ -10,8 +10,8 @@ from library.utils import *
 
 # Global variables
 highScore = highscore.HighScore()
-   
-    
+
+
 def mainMenu():
     mainMenuRunnig = True
     asteroides = []
@@ -102,7 +102,7 @@ def gameloop(startingState):
         player_.updatePlayer()
         
 
-        ## UFO LOGIKK ##
+        ## UFO LOGIC ##
         if ufo_.state == "dead":
             if ufo_.spawn_time == 0:
                 if random.randrange(0,300) == 0:
@@ -111,28 +111,27 @@ def gameloop(startingState):
             else:
                 ufo_.spawn_time -= 1
         else:
-            # Ufo nøyaktighet og kuleretning
+            # UFO bullet precision and direction
             acc = ufo_.small_ufo_acc * 4 / stage
             ufo_.bdir = math.degrees(math.atan2(-ufo_.y + player_.y, -ufo_.x + player_.x) + 
                                     math.radians(random.uniform(acc, -acc)))
             
+            # Only play the sound if the channel is not busy
             if ufo_.type == "small":
-                # Only play the sound if the channel is not busy
                 if not SND_CHANNEL_UFO.get_busy():
                     SND_CHANNEL_UFO.play(SND_UFO_SMALL)
             else:
-                # Only play the sound if the channel is not busy
                 if not SND_CHANNEL_UFO.get_busy():
                     SND_CHANNEL_UFO.play(SND_UFO_LARGE)
 
-            # Sjekk UFOs kollisjon med spiller
+            # UFO collision with player
             if player_.state != "dead":
                 if collision(player_.x, player_.y, ufo_.x, ufo_.y, ufo_.size):
                     ufo_.state = "dead"
                     player_.score += ufo_.get_ufo_score()
                     killPlayer(player_, debris_)
 
-            # Sjekker om UFO kolliderer med astroider
+            # UFO collision with astroids
             for a in rocks_.asteroids:
                 if collision(a.x, a.y, ufo_.x, ufo_.y, a.size):
                     ufo_.state = "dead"

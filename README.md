@@ -13,9 +13,11 @@ on Github as inspiration. I hope you enjoy it.
 
 
 ### Installation
-1. Install [Python 3](https://www.python.org/downloads/)
-2. In the comandline type: pip install /r requirements
-3. In the comandline type: python3 asteroids.py
+1. Clone Asteroids to your machine.
+2. Install [Python 3](https://www.python.org/downloads/)
+3. Create a virtual enviroment (optional). python -m venv <name of enviroment>
+4. In the comandline type: pip install /r requirements
+5. In the comandline type: python3 asteroids.py
 
 <br>
 <hr>
